@@ -1,0 +1,9 @@
+export { default as HeroSection } from './HeroSection';
+export { default as TrustedBySection } from './TrustedBySection';
+export { default as WhyChooseUsSection } from './WhyChooseUsSection';
+export { default as FeaturedFleetSection } from './FeaturedFleetSection';
+export { default as JourneyMapSection } from './JourneyMapSection';
+export { default as StatsSection } from './StatsSection';
+export { default as TestimonialsSection } from './TestimonialsSection';
+export { default as FaqSection } from './FaqSection';
+export { default as CtaSection } from './CtaSection';
