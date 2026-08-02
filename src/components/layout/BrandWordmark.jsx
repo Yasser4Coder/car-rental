@@ -16,14 +16,14 @@ export default function BrandWordmark({ variant = 'default', showTagline = false
     <div className="flex flex-col leading-none min-w-0">
       <span
         className={`font-bold tracking-wide truncate ${t.title} ${
-          compact ? 'text-base sm:text-lg' : 'text-lg'
+          compact ? 'text-[0.95rem] sm:text-lg' : 'text-lg'
         }`}
       >
         Green Rental
       </span>
       <span
         className={`uppercase mt-0.5 truncate ${t.subtitle} ${
-          compact ? 'text-[10px] sm:text-xs tracking-[0.12em]' : 'text-xs tracking-[0.15em]'
+          compact ? 'text-[9px] sm:text-[11px] tracking-[0.14em]' : 'text-xs tracking-[0.15em]'
         }`}
       >
         Expérience

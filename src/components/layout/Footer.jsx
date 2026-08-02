@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import BrandLogo from './BrandLogo';
+import { COMPANY } from '../../data/cars';
 import { FOOTER_COMPANY_LINKS, FOOTER_FLEET_LINKS } from '../../data/homeContent';
 
 export default function Footer() {
@@ -11,7 +12,12 @@ export default function Footer() {
           <div className="space-y-4 sm:space-y-6 sm:col-span-2 lg:col-span-1">
             <BrandLogo variant="inverse" asLink={false} showTagline />
             <p className="text-sm sm:text-body-md text-inverse-on-surface/70 max-w-xs leading-relaxed">
-              The world&apos;s premier exotic and luxury car rental network.
+              {COMPANY.tagline}. Based in Dubai Marina, serving drivers across the UAE.
+            </p>
+            <p className="text-sm text-inverse-on-surface/60 leading-relaxed">
+              {COMPANY.fullAddress}
+              <br />
+              {COMPANY.phone}
             </p>
             <div className="flex gap-3 sm:gap-4">
               <a

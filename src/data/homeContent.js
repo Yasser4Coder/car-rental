@@ -1,3 +1,5 @@
+import { CARS, FEATURED_CAR_IDS, toFeaturedCar } from './cars';
+
 export const HERO_IMAGE = '/images/hero-porsche.png';
 
 export const BRANDS = ['PORSCHE', 'MERCEDES', 'LAMBORGHINI', 'BENTLEY', 'FERRARI'];
@@ -25,50 +27,9 @@ export const WHY_CHOOSE_US = [
   },
 ];
 
-export const FEATURED_CARS = [
-  {
-    id: 1,
-    name: 'Porsche 911 GT3',
-    price: 799,
-    image: '/images/car-porsche-gt3.png',
-    alt: 'A side view of a metallic silver Porsche 911 GT3 in a clean studio setting.',
-    badges: [
-      { label: 'SPORT', className: 'bg-primary/80 backdrop-blur text-on-primary' },
-      { label: 'MOST POPULAR', className: 'bg-secondary-container text-on-secondary-container' },
-    ],
-    specs: [
-      { icon: 'settings', label: 'Auto' },
-      { icon: 'airline_seat_recline_normal', label: '2 Seats' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Range Rover Autobiography',
-    price: 550,
-    image: '/images/car-range-rover.png',
-    alt: 'A luxury charcoal gray Range Rover Autobiography parked in an elegant driveway.',
-    badges: [{ label: 'SUV', className: 'bg-primary/80 backdrop-blur text-on-primary' }],
-    specs: [
-      { icon: 'settings', label: 'Auto' },
-      { icon: 'airline_seat_recline_normal', label: '5 Seats' },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Tesla Model S Plaid',
-    price: 450,
-    image: '/images/car-tesla-plaid.png',
-    alt: 'A pearl white Tesla Model S Plaid charging at a modern charging station.',
-    badges: [
-      { label: 'ELECTRIC', className: 'bg-primary/80 backdrop-blur text-on-primary' },
-      { label: 'NEW ARRIVAL', className: 'bg-tertiary text-on-tertiary' },
-    ],
-    specs: [
-      { icon: 'bolt', label: 'Electric' },
-      { icon: 'airline_seat_recline_normal', label: '5 Seats' },
-    ],
-  },
-];
+export const FEATURED_CARS = FEATURED_CAR_IDS.map((id) =>
+  toFeaturedCar(CARS.find((car) => car.id === id)),
+).filter(Boolean);
 
 export const JOURNEY_STEPS = [
   { step: '01', title: 'Search', description: 'Browse our curated collection of elite vehicles.' },
@@ -78,57 +39,67 @@ export const JOURNEY_STEPS = [
 ];
 
 export const STATS = [
-  { value: '15k+', label: 'Rentals Delivered' },
-  { value: '120', label: 'Cities Worldwide' },
-  { value: '500+', label: 'Premium Cars' },
-  { value: '24/7', label: 'Elite Support' },
+  { value: '8k+', label: 'Dubai Rentals' },
+  { value: '4', label: 'Pickup Areas' },
+  { value: '50+', label: 'Premium Cars' },
+  { value: '24/7', label: 'Concierge Support' },
 ];
 
 export const TESTIMONIALS = [
   {
     quote:
-      'The seamless booking process and the quality of the Porsche I rented were beyond my expectations. This is my go-to whenever I\'m in LA.',
-    name: 'Julian Vancore',
+      'Booked a Porsche for a Marina weekend — delivery to my hotel was seamless and the car was spotless. My go-to whenever I’m in Dubai.',
+    name: 'Omar Al Farsi',
     role: 'TECH FOUNDER',
-    avatar: '/images/avatar-julian.png',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
   },
   {
     quote:
-      'Renting the Range Rover for our family trip was the best decision. The car was pristine, and the concierge service was incredibly helpful.',
+      'We took the Range Rover from DXB to Palm Jumeirah with kids and luggage. Concierge support in the UAE heat made everything easy.',
     name: 'Elena Rossi',
     role: 'INTERIOR DESIGNER',
-    avatar: '/images/avatar-elena.png',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
   },
   {
     quote:
-      'Absolute performance and absolute professionalism. The pickup was handled with true white-glove service. Highly recommended.',
+      'White-glove pickup in Downtown for a client dinner. Absolute professionalism — highly recommended for Dubai business travel.',
     name: 'Marcus Thorne',
     role: 'REAL ESTATE AGENT',
-    avatar: '/images/avatar-marcus.png',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
   },
 ];
 
 export const FAQ_ITEMS = [
   {
-    question: 'What documents do I need to rent?',
+    question: 'What documents do I need to rent in Dubai?',
     answer:
-      'You will need a valid driver\'s license, a valid passport, and a credit card in your name for the security deposit. International drivers may require an International Driving Permit.',
+      'Bring a valid UAE or international driving licence, your passport or Emirates ID, and a credit card in your name for the refundable deposit. Visitors may also need an International Driving Permit depending on their licence origin.',
     defaultOpen: true,
   },
   {
     question: 'Is there a minimum age requirement?',
     answer:
-      'For our standard luxury fleet, the minimum age is 25. For our Supercar collection, the minimum age is 30 with a clean driving record.',
+      'For our standard luxury fleet the minimum age is 25. For supercars the minimum age is 30 with a clean driving record, in line with UAE insurer requirements.',
+    defaultOpen: false,
+  },
+  {
+    question: 'Where can I pick up or return the car?',
+    answer:
+      'We operate from Dubai Marina with pickup and delivery across Dubai Marina, Downtown Dubai, Palm Jumeirah, and Dubai International Airport (DXB).',
     defaultOpen: false,
   },
 ];
 
-export const NAV_LINKS = [
-  { label: 'Fleet', href: '#fleet', active: true },
-  { label: 'Services', href: '#services' },
-  { label: 'Experience', href: '#experience' },
-  { label: 'Locations', href: '#locations' },
+export const MAIN_NAV = [
+  { label: 'Fleet', to: '/cars', icon: 'directions_car' },
+  { label: 'Services', to: '/#services', icon: 'verified' },
+  { label: 'How it works', to: '/#experience', icon: 'route' },
+  { label: 'Reviews', to: '/#locations', icon: 'star' },
+  { label: 'Bookings', to: '/bookings', icon: 'receipt_long' },
 ];
+
+/** @deprecated use MAIN_NAV */
+export const NAV_LINKS = MAIN_NAV;
 
 export const FOOTER_FLEET_LINKS = ['Hypercars', 'Luxury Sedans', 'Electric Performance', 'Convertibles'];
 export const FOOTER_COMPANY_LINKS = ['Privacy Policy', 'Terms of Service', 'Fleet Guide', 'Contact Us'];

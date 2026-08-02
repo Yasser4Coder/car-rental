@@ -1,66 +1,110 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import BrandLogo from './BrandLogo';
+import NavLinkItem from './NavLinkItem';
 import MaterialIcon from '../common/MaterialIcon';
-import { NAV_LINKS } from '../../data/homeContent';
+import { MAIN_NAV } from '../../data/homeContent';
+import { COMPANY } from '../../data/cars';
 
 export default function MobileNav({ open, onClose }) {
-  useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [open]);
+  const closeRef = useRef(null);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    closeRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open, onClose]);
 
   return (
-    <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <div
+      className={`mobile-nav ${open ? 'mobile-nav--open' : ''}`}
+      aria-hidden={!open}
+    >
       <button
         type="button"
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="mobile-nav__backdrop"
         onClick={onClose}
+        tabIndex={open ? 0 : -1}
         aria-label="Close menu"
       />
 
-      <nav className="absolute top-0 right-0 flex h-full w-[min(100vw,320px)] flex-col bg-surface shadow-2xl">
-        <div className="flex items-center justify-between border-b border-on-surface/10 px-5 py-4">
-          <span className="text-sm font-semibold text-primary">Menu</span>
+      <nav
+        id="mobile-navigation"
+        className="mobile-nav__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation"
+      >
+        <div className="mobile-nav__top">
+          <BrandLogo compact onNavigate={onClose} />
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface-container-low transition-colors"
+            className="mobile-nav__close"
             aria-label="Close menu"
+            tabIndex={open ? 0 : -1}
           >
             <MaterialIcon name="close" />
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-6">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              onClick={onClose}
-              className={`rounded-xl px-4 py-3.5 text-base font-medium transition-colors ${
-                link.active
-                  ? 'bg-primary/5 text-secondary'
-                  : 'text-on-surface hover:bg-surface-container-low'
-              }`}
+        <div className="mobile-nav__meta">
+          <p className="mobile-nav__eyebrow">Dubai · UAE</p>
+          <p className="mobile-nav__address">{COMPANY.fullAddress}</p>
+        </div>
+
+        <div className="mobile-nav__links">
+          {MAIN_NAV.map((link) => (
+            <NavLinkItem
+              key={link.to}
+              to={link.to}
+              onNavigate={onClose}
+              className="mobile-nav__link"
+              activeClassName="mobile-nav__link--active"
+              tabIndex={open ? 0 : -1}
             >
-              {link.label}
-            </a>
+              <MaterialIcon name={link.icon} className="text-xl" />
+              <span>{link.label}</span>
+              <MaterialIcon name="chevron_right" className="mobile-nav__chevron" />
+            </NavLinkItem>
           ))}
         </div>
 
-        <div className="border-t border-on-surface/10 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          <Link
-            to="/cars"
-            onClick={onClose}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold uppercase tracking-widest text-on-primary active:scale-[0.98] transition-transform"
+        <div className="mobile-nav__footer">
+          <a
+            href={`tel:${COMPANY.phone.replace(/\s/g, '')}`}
+            className="mobile-nav__call"
+            tabIndex={open ? 0 : -1}
           >
-            <MaterialIcon name="directions_car" className="text-lg" />
-            Book Now
-          </Link>
+            <MaterialIcon name="call" />
+            <span>
+              <strong>Call concierge</strong>
+              <small>{COMPANY.phone}</small>
+            </span>
+          </a>
+
+          <NavLinkItem
+            to="/cars"
+            onNavigate={onClose}
+            className="mobile-nav__cta"
+            tabIndex={open ? 0 : -1}
+          >
+            <MaterialIcon name="directions_car" />
+            Browse fleet
+          </NavLinkItem>
         </div>
       </nav>
     </div>

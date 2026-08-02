@@ -1,31 +1,18 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { Pagination, Autoplay } from 'swiper/modules';
 import ScrollReveal from '../common/ScrollReveal';
 import MaterialIcon from '../common/MaterialIcon';
 import FeaturedCarCard from '../cars/FeaturedCarCard';
 import { FEATURED_CARS } from '../../data/homeContent';
 
 import 'swiper/css';
+import 'swiper/css/pagination';
 
 export default function FeaturedFleetSection() {
-  const prevRef = useRef(null);
-  const nextRef = useRef(null);
+  const swiperRef = useRef(null);
   const paginationRef = useRef(null);
-
-  const bindSwiperControls = (swiper) => {
-    if (!prevRef.current || !nextRef.current || !paginationRef.current) return;
-
-    swiper.params.navigation.prevEl = prevRef.current;
-    swiper.params.navigation.nextEl = nextRef.current;
-    swiper.params.pagination.el = paginationRef.current;
-
-    swiper.navigation.destroy();
-    swiper.pagination.destroy();
-    swiper.navigation.init();
-    swiper.pagination.init();
-  };
 
   return (
     <ScrollReveal id="fleet" className="py-10 sm:py-stack-lg overflow-hidden">
@@ -45,25 +32,30 @@ export default function FeaturedFleetSection() {
           </Link>
         </div>
 
-        <div className="relative fleet-swiper -mx-margin-mobile px-margin-mobile sm:mx-0 sm:px-0">
+        <div className="relative fleet-swiper -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
           <Swiper
-            modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={16}
-            slidesPerView={1.08}
-            loop
-            autoplay={{ delay: 5000, disableOnInteraction: false }}
-            onBeforeInit={bindSwiperControls}
-            onInit={bindSwiperControls}
-            navigation
+            modules={[Pagination, Autoplay]}
+            spaceBetween={14}
+            slidesPerView={1.12}
+            rewind
+            autoplay={{ delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true }}
             pagination={{ clickable: true }}
             breakpoints={{
-              640: { slidesPerView: 1.2, spaceBetween: 20 },
-              768: { slidesPerView: 2, spaceBetween: 24 },
-              1024: { slidesPerView: 3, spaceBetween: 24 },
+              480: { slidesPerView: 1.25, spaceBetween: 16 },
+              640: { slidesPerView: 1.5, spaceBetween: 18 },
+              768: { slidesPerView: 2.15, spaceBetween: 20 },
+              1024: { slidesPerView: 2.5, spaceBetween: 24 },
+              1280: { slidesPerView: 2.85, spaceBetween: 24 },
+            }}
+            onBeforeInit={(swiper) => {
+              swiper.params.pagination.el = paginationRef.current;
+            }}
+            onSwiper={(swiper) => {
+              swiperRef.current = swiper;
             }}
           >
             {FEATURED_CARS.map((car) => (
-              <SwiperSlide key={car.id} className="!h-auto">
+              <SwiperSlide key={car.id} className="h-auto!">
                 <FeaturedCarCard car={car} />
               </SwiperSlide>
             ))}
@@ -71,10 +63,10 @@ export default function FeaturedFleetSection() {
 
           <div className="fleet-controls mt-6 sm:mt-8">
             <button
-              ref={prevRef}
               type="button"
               className="fleet-nav-btn"
               aria-label="Previous slide"
+              onClick={() => swiperRef.current?.slidePrev()}
             >
               <MaterialIcon name="chevron_left" />
             </button>
@@ -82,10 +74,10 @@ export default function FeaturedFleetSection() {
             <div ref={paginationRef} className="fleet-pagination" />
 
             <button
-              ref={nextRef}
               type="button"
               className="fleet-nav-btn"
               aria-label="Next slide"
+              onClick={() => swiperRef.current?.slideNext()}
             >
               <MaterialIcon name="chevron_right" />
             </button>

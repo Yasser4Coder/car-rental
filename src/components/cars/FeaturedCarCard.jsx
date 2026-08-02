@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
+import { formatPrice } from '../../data/cars';
 
 export default function FeaturedCarCard({ car }) {
   return (
@@ -35,7 +36,7 @@ export default function FeaturedCarCard({ car }) {
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-secondary font-bold">${car.price}</p>
+          <p className="text-secondary font-bold">{formatPrice(car.price)}</p>
           <p className="text-[10px] text-on-surface-variant uppercase">PER DAY</p>
         </div>
       </div>

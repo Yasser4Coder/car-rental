@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
 import MobileNav from './MobileNav';
+import NavLinkItem from './NavLinkItem';
 import MaterialIcon from '../common/MaterialIcon';
-import { NAV_LINKS } from '../../data/homeContent';
+import { MAIN_NAV } from '../../data/homeContent';
+import { COMPANY } from '../../data/cars';
 
 export default function Header() {
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname, location.hash]);
 
   useEffect(() => {
     const onResize = () => {
@@ -23,59 +31,62 @@ export default function Header() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.replace('#', '');
+    const timer = window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [location.pathname, location.hash]);
+
   return (
     <>
-      <header
-        className={`fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl border-b border-on-surface/10 transition-shadow duration-300 pt-[env(safe-area-inset-top)] ${
-          scrolled ? 'shadow-md' : 'shadow-sm'
-        }`}
-      >
-        <div
-          className={`container mx-auto flex items-center justify-between gap-3 px-margin-mobile md:px-margin-desktop transition-all duration-300 ${
-            scrolled ? 'h-14 md:h-16' : 'h-16 md:h-[4.5rem]'
-          }`}
-        >
-          <BrandLogo compact />
+      <header className={`site-header ${scrolled ? 'site-header--scrolled' : ''}`}>
+        <div className="site-header__bar">
+          <BrandLogo compact className="site-header__brand" />
 
-          <nav className="hidden lg:flex items-center gap-10" aria-label="Main navigation">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className={
-                  link.active
-                    ? 'text-sm font-semibold text-secondary border-b-2 border-secondary pb-0.5'
-                    : 'text-sm font-medium text-on-surface-variant hover:text-primary transition-colors'
-                }
+          <nav className="site-header__nav" aria-label="Main navigation">
+            {MAIN_NAV.map((link) => (
+              <NavLinkItem
+                key={link.to}
+                to={link.to}
+                className="site-header__link"
+                activeClassName="site-header__link--active"
               >
                 {link.label}
-              </a>
+              </NavLinkItem>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <Link
-              to="/cars"
-              className="hidden sm:inline-flex bg-primary text-on-primary px-5 lg:px-7 py-2.5 text-label-sm uppercase tracking-widest rounded-xl hover:bg-tertiary active:scale-95 transition-all duration-200 shadow-sm"
+          <div className="site-header__actions">
+            <a
+              href={`tel:${COMPANY.phone.replace(/\s/g, '')}`}
+              className="site-header__phone"
+              aria-label={`Call ${COMPANY.phone}`}
             >
-              Book Now
-            </Link>
+              <MaterialIcon name="call" className="text-lg" />
+              <span className="site-header__phone-text">{COMPANY.phone}</span>
+            </a>
 
-            <Link
-              to="/cars"
-              className="sm:hidden flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-on-primary active:scale-95 transition-transform shadow-sm"
-              aria-label="Book now"
-            >
-              <MaterialIcon name="directions_car" className="text-xl" />
-            </Link>
+            <NavLinkItem to="/bookings" className="site-header__icon-btn" aria-label="My bookings">
+              <MaterialIcon name="receipt_long" className="text-[1.35rem]" />
+            </NavLinkItem>
+
+            <NavLinkItem to="/cars" className="site-header__cta">
+              <span className="site-header__cta-full">Book now</span>
+              <span className="site-header__cta-short">Book</span>
+            </NavLinkItem>
 
             <button
               type="button"
-              onClick={() => setMenuOpen(true)}
-              className="lg:hidden flex h-10 w-10 items-center justify-center rounded-xl border border-on-surface/15 text-primary hover:bg-surface-container-low active:scale-95 transition-all"
-              aria-label="Open menu"
+              className="site-header__menu-btn"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
+              onClick={() => setMenuOpen((open) => !open)}
             >
-              <MaterialIcon name="menu" />
+              <MaterialIcon name={menuOpen ? 'close' : 'menu'} className="text-[1.4rem]" />
             </button>
           </div>
         </div>
