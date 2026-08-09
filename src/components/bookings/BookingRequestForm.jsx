@@ -1,11 +1,12 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
+import { carApi } from '../../api';
+import { useAuthContext } from '../../context/AuthContext';
 import {
   COMPANY,
   LOCATIONS,
   formatPrice,
-  getCarById,
   getTypeLabel,
 } from '../../data/cars';
 import { addDaysISO, rentalDays, todayISO } from '../../utils/bookingsStorage';
@@ -23,33 +24,64 @@ const emptyForm = {
 
 export default function BookingRequestForm({ carId, initialDate = '', onSubmit }) {
   const baseId = useId();
-  const car = getCarById(carId);
+  const { user } = useAuthContext();
   const minDate = useMemo(() => todayISO(), []);
 
+  const [car, setCar] = useState(null);
+  const [carLoading, setCarLoading] = useState(Boolean(carId));
+  const [carError, setCarError] = useState('');
   const [form, setForm] = useState(() => {
     const pickup = initialDate && initialDate >= todayISO() ? initialDate : todayISO();
     return {
       ...emptyForm,
       pickupDate: pickup,
       returnDate: addDaysISO(pickup, 2),
-      location: car?.locations?.[0] || 'dubai-marina',
     };
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!car) return;
+    if (!carId) {
+      setCar(null);
+      setCarLoading(false);
+      return;
+    }
+    setCarLoading(true);
+    setCarError('');
+    carApi
+      .getById(carId)
+      .then((res) => {
+        const data = res.data;
+        setCar(data);
+        setForm((prev) => ({
+          ...prev,
+          location: data.locations?.includes(prev.location)
+            ? prev.location
+            : data.locations?.[0] || 'dubai-marina',
+        }));
+      })
+      .catch((err) => {
+        setCar(null);
+        setCarError(err.message || 'Vehicle not found');
+      })
+      .finally(() => setCarLoading(false));
+  }, [carId]);
+
+  useEffect(() => {
+    if (!user) return;
     setForm((prev) => ({
       ...prev,
-      location: car.locations.includes(prev.location) ? prev.location : car.locations[0],
+      fullName: prev.fullName || user.fullName || '',
+      email: prev.email || user.email || '',
+      phone: prev.phone || user.phone || '',
     }));
-  }, [car]);
+  }, [user]);
 
   const days = rentalDays(form.pickupDate, form.returnDate);
-  const subtotal = car ? car.price * days : 0;
+  const subtotal = car ? Number(car.price) * days : 0;
   const availableLocations = LOCATIONS.filter((item) =>
-    car ? car.locations.includes(item.value) : true,
+    car ? (car.locations || []).includes(item.value) : true,
   );
 
   const update = (field) => (event) => {
@@ -83,6 +115,7 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
     event.preventDefault();
     if (!car || !validate()) return;
     setSubmitting(true);
+    setErrors((prev) => ({ ...prev, form: '' }));
     try {
       await onSubmit({
         car,
@@ -96,10 +129,20 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
           notes: form.notes.trim(),
         },
       });
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, form: err.message || 'Could not submit request' }));
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (carLoading) {
+    return (
+      <div className="rounded-2xl border border-on-surface/10 bg-surface-container-low px-6 py-12 text-center">
+        <p className="text-on-surface-variant">Loading vehicle…</p>
+      </div>
+    );
+  }
 
   if (!car) {
     return (
@@ -107,7 +150,7 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-secondary-fixed/40">
           <MaterialIcon name="directions_car" className="text-2xl text-primary" />
         </div>
-        <h2 className="text-xl font-bold">Choose a vehicle first</h2>
+        <h2 className="text-xl font-bold">{carError || 'Choose a vehicle first'}</h2>
         <p className="mx-auto mt-2 max-w-md text-on-surface-variant">
           Browse the Dubai fleet, open a car you like, then tap Request booking.
         </p>
@@ -124,6 +167,12 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8" noValidate>
       <div className="lg:col-span-7 space-y-5">
+        {errors.form && (
+          <p className="rounded-xl border border-error/30 bg-error-container/40 px-4 py-3 text-sm text-on-error-container">
+            {errors.form}
+          </p>
+        )}
+
         <section className="booking-panel">
           <h2 className="text-lg font-bold">Your details</h2>
           <p className="mt-1 text-sm text-on-surface-variant">We’ll confirm by phone or WhatsApp within Dubai business hours.</p>

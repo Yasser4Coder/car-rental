@@ -1,14 +1,11 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import CarCard from '../components/cars/CarCard';
 import CarsFilterBar from '../components/cars/CarsFilterBar';
 import MaterialIcon from '../components/common/MaterialIcon';
 import ScrollReveal from '../components/common/ScrollReveal';
-import {
-  filterCars,
-  getLocationLabel,
-  getTypeLabel,
-} from '../data/cars';
+import { carApi } from '../api';
+import { getLocationLabel, getTypeLabel } from '../data/cars';
 
 function formatDate(value) {
   if (!value) return null;
@@ -25,8 +22,17 @@ function formatDate(value) {
 function updateParams(searchParams, updates) {
   const next = new URLSearchParams(searchParams);
   Object.entries(updates).forEach(([key, value]) => {
-    if (value === undefined || value === null || value === '' || value === 'any') {
-      next.delete(key);
+    if (
+      value === undefined ||
+      value === null ||
+      value === '' ||
+      value === 'any' ||
+      value === 'featured' ||
+      (key === 'page' && String(value) === '1')
+    ) {
+      if (key === 'sort' && value === 'featured') next.delete(key);
+      else if (value === 'featured') next.delete(key);
+      else next.delete(key);
     } else {
       next.set(key, value);
     }
@@ -36,24 +42,50 @@ function updateParams(searchParams, updates) {
 
 export default function CarsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [cars, setCars] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const location = searchParams.get('location') || '';
   const type = searchParams.get('type') || 'any';
   const sort = searchParams.get('sort') || 'featured';
   const query = searchParams.get('q') || '';
   const pickupDate = searchParams.get('date') || '';
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const pageSize = 12;
+  const [totalPages, setTotalPages] = useState(1);
 
-  const cars = useMemo(
-    () => filterCars({ location, type, sort, query }),
-    [location, type, sort, query],
-  );
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+    carApi
+      .getAll({
+        location: location || undefined,
+        type: type !== 'any' ? type : undefined,
+        sort,
+        q: query || undefined,
+        date: pickupDate || undefined,
+        limit: pageSize,
+        page,
+      })
+      .then((res) => {
+        setCars(res.data || []);
+        setTotal(res.meta?.total ?? res.data?.length ?? 0);
+        setTotalPages(res.meta?.totalPages || 1);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [location, type, sort, query, pickupDate, page]);
 
   const locationLabel = getLocationLabel(location);
   const typeLabel = type && type !== 'any' ? getTypeLabel(type) : null;
   const dateLabel = formatDate(pickupDate);
 
   const setFilter = (updates) => {
-    setSearchParams(updateParams(searchParams, updates), { replace: true });
+    setSearchParams(updateParams(searchParams, { ...updates, page: updates.page || '' }), {
+      replace: true,
+    });
   };
 
   const clearFilters = () => {
@@ -114,7 +146,7 @@ export default function CarsPage() {
           type={type}
           sort={sort}
           query={query}
-          resultCount={cars.length}
+          resultCount={total}
           onLocationChange={(value) => setFilter({ location: value })}
           onTypeChange={(value) => setFilter({ type: value })}
           onSortChange={(value) => setFilter({ sort: value === 'featured' ? '' : value })}
@@ -122,22 +154,52 @@ export default function CarsPage() {
           onClear={clearFilters}
         />
 
-        {cars.length > 0 ? (
-          <ScrollReveal className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 sm:gap-x-6 sm:gap-y-10">
-            {cars.map((car) => (
-              <CarCard key={car.id} car={car} pickupDate={pickupDate} />
-            ))}
-          </ScrollReveal>
+        {error && <p className="mt-6 text-error">{error}</p>}
+        {loading ? (
+          <p className="mt-8 text-on-surface-variant">Loading fleet…</p>
+        ) : cars.length > 0 ? (
+          <>
+            <ScrollReveal className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 sm:gap-x-6 sm:gap-y-10">
+              {cars.map((car) => (
+                <CarCard key={car.id} car={car} pickupDate={pickupDate} />
+              ))}
+            </ScrollReveal>
+
+            {totalPages > 1 && (
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setFilter({ page: String(page - 1) })}
+                  className="inline-flex min-h-[44px] items-center rounded-lg border border-on-surface/15 px-4 text-sm font-semibold disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <p className="text-sm text-on-surface-variant">
+                  Page {page} of {totalPages}
+                </p>
+                <button
+                  type="button"
+                  disabled={page >= totalPages}
+                  onClick={() => setFilter({ page: String(page + 1) })}
+                  className="inline-flex min-h-[44px] items-center rounded-lg border border-on-surface/15 px-4 text-sm font-semibold disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="mt-10 rounded-2xl border border-dashed border-on-surface/15 bg-surface-container-low px-6 py-14 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-secondary-fixed/40">
-              <MaterialIcon name="search_off" className="text-2xl text-primary" />
-            </div>
             <h2 className="text-xl font-bold">No vehicles match</h2>
             <p className="mx-auto mt-2 max-w-md text-on-surface-variant">
               Try another city, clear the car type, or search a different brand.
             </p>
-            <button type="button" onClick={clearFilters} className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary px-6 text-label-sm uppercase tracking-widest text-on-primary hover:bg-tertiary transition-colors">
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary px-6 text-label-sm uppercase tracking-widest text-on-primary"
+            >
               Reset filters
             </button>
           </div>

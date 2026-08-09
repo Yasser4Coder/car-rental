@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
-import { formatPrice } from '../../data/cars';
+import { asArray, formatPrice } from '../../data/cars';
 
 export default function FeaturedCarCard({ car }) {
+  const badges = asArray(car.badges);
+  const specs = asArray(car.specs);
+
   return (
     <div className="group h-full">
       <div className="relative aspect-16/10 overflow-hidden mb-6 rounded-xl">
@@ -12,10 +15,10 @@ export default function FeaturedCarCard({ car }) {
           alt={car.alt}
         />
         <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
-          {car.badges.map((badge) => (
+          {badges.map((badge) => (
             <span
               key={badge.label}
-              className={`${badge.className} px-3 py-1 text-[10px] uppercase text-label-sm tracking-widest rounded`}
+              className={`${badge.className || 'bg-primary/80 text-on-primary'} px-3 py-1 text-[10px] uppercase text-label-sm tracking-widest rounded`}
             >
               {badge.label}
             </span>
@@ -27,7 +30,7 @@ export default function FeaturedCarCard({ car }) {
         <div className="min-w-0">
           <h3 className="text-xl font-bold truncate">{car.name}</h3>
           <div className="flex flex-wrap gap-4 mt-2 text-on-surface-variant text-label-sm">
-            {car.specs.map((spec) => (
+            {specs.map((spec) => (
               <span key={spec.label} className="flex items-center gap-1">
                 <MaterialIcon name={spec.icon} className="text-sm" />
                 {spec.label}

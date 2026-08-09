@@ -13,6 +13,11 @@ const STATUS = {
     className: 'bg-primary/10 text-primary',
     icon: 'verified',
   },
+  active: {
+    label: 'Active',
+    className: 'bg-primary/10 text-primary',
+    icon: 'directions_car',
+  },
   completed: {
     label: 'Completed',
     className: 'bg-surface-container text-on-surface-variant',
@@ -22,6 +27,11 @@ const STATUS = {
     label: 'Cancelled',
     className: 'bg-error-container text-on-error-container',
     icon: 'cancel',
+  },
+  rejected: {
+    label: 'Rejected',
+    className: 'bg-error-container text-on-error-container',
+    icon: 'block',
   },
 };
 
@@ -48,7 +58,7 @@ export default function BookingCard({ booking, onCancel }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
-              {booking.id}
+              {booking.code || booking.id}
             </p>
             <h3 className="mt-1 text-lg font-bold truncate">
               <Link to={`/cars/${booking.carId}`} className="hover:text-secondary transition-colors">

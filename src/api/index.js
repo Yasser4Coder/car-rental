@@ -1,16 +1,19 @@
 import api from './client.js';
 
 export const carApi = {
-  getAll: (params) => {
-    const query = params ? `?${new URLSearchParams(params)}` : '';
+  getAll: (params = {}) => {
+    const cleaned = Object.fromEntries(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '' && v !== 'any'),
+    );
+    const query = Object.keys(cleaned).length ? `?${new URLSearchParams(cleaned)}` : '';
     return api.get(`/cars${query}`);
   },
+  getFeatured: (limit = 12) => api.get(`/cars/featured?limit=${limit}`),
   getById: (id) => api.get(`/cars/${id}`),
 };
 
 export const bookingApi = {
-  getAll: () => api.get('/bookings'),
-  getById: (id) => api.get(`/bookings/${id}`),
+  getMine: () => api.get('/bookings/mine'),
   create: (data) => api.post('/bookings', data),
   cancel: (id) => api.patch(`/bookings/${id}/cancel`),
 };
@@ -18,6 +21,8 @@ export const bookingApi = {
 export const authApi = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (data) => api.post('/auth/register', data),
+  logout: () => api.post('/auth/logout', {}),
+  refresh: () => api.post('/auth/refresh', {}),
 };
 
 export const userApi = {

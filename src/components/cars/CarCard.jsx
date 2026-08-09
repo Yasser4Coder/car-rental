@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
-import { formatPrice, getCarSpecs, getTypeLabel } from '../../data/cars';
+import { asArray, formatPrice, getCarSpecs, getTypeLabel } from '../../data/cars';
 
 export default function CarCard({ car, pickupDate = '' }) {
   const specs = getCarSpecs(car);
+  const badges = asArray(car.badges);
   const detailPath = pickupDate
     ? `/cars/${car.id}?date=${encodeURIComponent(pickupDate)}`
     : `/cars/${car.id}`;
@@ -19,10 +20,10 @@ export default function CarCard({ car, pickupDate = '' }) {
         />
         <div className="absolute inset-0 bg-linear-to-t from-primary/35 via-transparent to-transparent opacity-80" />
         <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-          {car.badges.slice(0, 2).map((badge) => (
+          {badges.slice(0, 2).map((badge) => (
             <span
               key={badge.label}
-              className={`${badge.className} rounded px-2.5 py-1 text-[10px] uppercase tracking-widest`}
+              className={`${badge.className || 'bg-primary/80 text-on-primary'} rounded px-2.5 py-1 text-[10px] uppercase tracking-widest`}
             >
               {badge.label}
             </span>

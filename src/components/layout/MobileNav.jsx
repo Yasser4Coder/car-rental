@@ -2,11 +2,13 @@ import { useEffect, useRef } from 'react';
 import BrandLogo from './BrandLogo';
 import NavLinkItem from './NavLinkItem';
 import MaterialIcon from '../common/MaterialIcon';
+import { useAuthContext } from '../../context/AuthContext';
 import { MAIN_NAV } from '../../data/homeContent';
 import { COMPANY } from '../../data/cars';
 
 export default function MobileNav({ open, onClose }) {
   const closeRef = useRef(null);
+  const { isAuthenticated, logout } = useAuthContext();
 
   useEffect(() => {
     if (!open) return undefined;
@@ -84,6 +86,37 @@ export default function MobileNav({ open, onClose }) {
         </div>
 
         <div className="mobile-nav__footer">
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="mobile-nav__call"
+              tabIndex={open ? 0 : -1}
+              onClick={() => {
+                logout();
+                onClose();
+              }}
+            >
+              <MaterialIcon name="logout" />
+              <span>
+                <strong>Log out</strong>
+                <small>End your session</small>
+              </span>
+            </button>
+          ) : (
+            <NavLinkItem
+              to="/login"
+              onNavigate={onClose}
+              className="mobile-nav__call"
+              tabIndex={open ? 0 : -1}
+            >
+              <MaterialIcon name="person" />
+              <span>
+                <strong>Log in</strong>
+                <small>Track your bookings</small>
+              </span>
+            </NavLinkItem>
+          )}
+
           <a
             href={`tel:${COMPANY.phone.replace(/\s/g, '')}`}
             className="mobile-nav__call"

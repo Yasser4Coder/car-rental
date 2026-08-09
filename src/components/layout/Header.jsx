@@ -4,11 +4,13 @@ import BrandLogo from './BrandLogo';
 import MobileNav from './MobileNav';
 import NavLinkItem from './NavLinkItem';
 import MaterialIcon from '../common/MaterialIcon';
+import { useAuthContext } from '../../context/AuthContext';
 import { MAIN_NAV } from '../../data/homeContent';
 import { COMPANY } from '../../data/cars';
 
 export default function Header() {
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuthContext();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -72,6 +74,22 @@ export default function Header() {
             <NavLinkItem to="/bookings" className="site-header__icon-btn" aria-label="My bookings">
               <MaterialIcon name="receipt_long" className="text-[1.35rem]" />
             </NavLinkItem>
+
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="site-header__icon-btn hidden sm:inline-flex"
+                aria-label={`Log out ${user?.fullName || ''}`}
+                title="Log out"
+              >
+                <MaterialIcon name="logout" className="text-[1.35rem]" />
+              </button>
+            ) : (
+              <NavLinkItem to="/login" className="site-header__icon-btn hidden sm:inline-flex" aria-label="Log in">
+                <MaterialIcon name="person" className="text-[1.35rem]" />
+              </NavLinkItem>
+            )}
 
             <NavLinkItem to="/cars" className="site-header__cta">
               <span className="site-header__cta-full">Book now</span>

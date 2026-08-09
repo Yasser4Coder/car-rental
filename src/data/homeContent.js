@@ -1,5 +1,3 @@
-import { CARS, FEATURED_CAR_IDS, toFeaturedCar } from './cars';
-
 export const HERO_IMAGE = '/images/hero-porsche.png';
 
 export const BRANDS = ['PORSCHE', 'MERCEDES', 'LAMBORGHINI', 'BENTLEY', 'FERRARI'];
@@ -26,10 +24,6 @@ export const WHY_CHOOSE_US = [
     description: 'Dedicated concierge for your entire journey.',
   },
 ];
-
-export const FEATURED_CARS = FEATURED_CAR_IDS.map((id) =>
-  toFeaturedCar(CARS.find((car) => car.id === id)),
-).filter(Boolean);
 
 export const JOURNEY_STEPS = [
   { step: '01', title: 'Search', description: 'Browse our curated collection of elite vehicles.' },

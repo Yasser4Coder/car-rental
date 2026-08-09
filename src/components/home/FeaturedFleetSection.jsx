@@ -1,18 +1,40 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import ScrollReveal from '../common/ScrollReveal';
 import MaterialIcon from '../common/MaterialIcon';
 import FeaturedCarCard from '../cars/FeaturedCarCard';
-import { FEATURED_CARS } from '../../data/homeContent';
+import { carApi } from '../../api';
+import { asArray, getCarSpecs } from '../../data/cars';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
 
+function toFeaturedCard(car) {
+  return {
+    id: car.id,
+    name: car.name,
+    price: car.price,
+    image: car.image,
+    alt: car.alt,
+    badges: asArray(car.badges),
+    specs: getCarSpecs(car),
+  };
+}
+
 export default function FeaturedFleetSection() {
   const swiperRef = useRef(null);
   const paginationRef = useRef(null);
+  const [cars, setCars] = useState([]);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    carApi
+      .getFeatured()
+      .then((res) => setCars((res.data || []).map(toFeaturedCard)))
+      .catch((err) => setError(err.message));
+  }, []);
 
   return (
     <ScrollReveal id="fleet" className="py-10 sm:py-stack-lg overflow-hidden">
@@ -31,6 +53,8 @@ export default function FeaturedFleetSection() {
             VIEW FULL CATALOG
           </Link>
         </div>
+
+        {error && <p className="mb-4 text-sm text-error">{error}</p>}
 
         <div className="relative fleet-swiper -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
           <Swiper
@@ -54,7 +78,7 @@ export default function FeaturedFleetSection() {
               swiperRef.current = swiper;
             }}
           >
-            {FEATURED_CARS.map((car) => (
+            {cars.map((car) => (
               <SwiperSlide key={car.id} className="h-auto!">
                 <FeaturedCarCard car={car} />
               </SwiperSlide>
@@ -70,9 +94,7 @@ export default function FeaturedFleetSection() {
             >
               <MaterialIcon name="chevron_left" />
             </button>
-
             <div ref={paginationRef} className="fleet-pagination" />
-
             <button
               type="button"
               className="fleet-nav-btn"

@@ -1,83 +1,142 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import BookingCard from '../components/bookings/BookingCard';
 import BookingRequestForm from '../components/bookings/BookingRequestForm';
 import MaterialIcon from '../components/common/MaterialIcon';
-import { COMPANY, getCarById } from '../data/cars';
-import {
-  addBooking,
-  createBookingId,
-  loadBookings,
-  updateBookingStatus,
-} from '../utils/bookingsStorage';
+import { bookingApi, carApi } from '../api';
+import { useAuthContext } from '../context/AuthContext';
+import { COMPANY } from '../data/cars';
 
 const TABS = [
   { id: 'request', label: 'New request', icon: 'edit_calendar' },
   { id: 'history', label: 'My bookings', icon: 'receipt_long' },
 ];
 
+function normalizeBooking(booking) {
+  return {
+    id: booking.id,
+    code: booking.code,
+    carId: booking.carId,
+    carName: booking.car?.name || booking.carName || 'Vehicle',
+    carImage: booking.car?.image || booking.carImage || '',
+    status: booking.status,
+    days: booking.days,
+    total: booking.total,
+    dailyRate: booking.dailyRate,
+    deposit: booking.deposit,
+    location: booking.location,
+    pickupDate: booking.pickupDate,
+    returnDate: booking.returnDate,
+    delivery: booking.delivery,
+    fullName: booking.fullName,
+    email: booking.email,
+    phone: booking.phone,
+    notes: booking.notes,
+    createdAt: booking.createdAt,
+    updatedAt: booking.updatedAt,
+  };
+}
+
 export default function BookingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const carId = searchParams.get('car') || '';
   const initialDate = searchParams.get('date') || '';
-  const car = getCarById(carId);
+  const { isAuthenticated, loading: authLoading } = useAuthContext();
 
   const [tab, setTab] = useState(carId ? 'request' : 'history');
-  const [bookings, setBookings] = useState(() => loadBookings());
-  const [successId, setSuccessId] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [selectedCarName, setSelectedCarName] = useState('');
+  const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState('');
+  const [successCode, setSuccessCode] = useState(null);
 
   useEffect(() => {
     if (carId) setTab('request');
   }, [carId]);
 
+  useEffect(() => {
+    if (!carId) {
+      setSelectedCarName('');
+      return;
+    }
+    carApi
+      .getById(carId)
+      .then((res) => setSelectedCarName(res.data?.name || ''))
+      .catch(() => setSelectedCarName(''));
+  }, [carId]);
+
+  const loadMine = useCallback(() => {
+    if (!isAuthenticated) {
+      setBookings([]);
+      setListError('');
+      return;
+    }
+    setListLoading(true);
+    setListError('');
+    bookingApi
+      .getMine()
+      .then((res) => setBookings((res.data || []).map(normalizeBooking)))
+      .catch((err) => setListError(err.message || 'Could not load bookings'))
+      .finally(() => setListLoading(false));
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (tab === 'history' && !authLoading) loadMine();
+  }, [tab, authLoading, loadMine]);
+
   const activeBookings = useMemo(
-    () => bookings.filter((item) => item.status === 'pending' || item.status === 'confirmed'),
+    () =>
+      bookings.filter((item) =>
+        ['pending', 'confirmed', 'active'].includes(item.status),
+      ),
     [bookings],
   );
   const pastBookings = useMemo(
-    () => bookings.filter((item) => item.status === 'completed' || item.status === 'cancelled'),
+    () =>
+      bookings.filter((item) =>
+        ['completed', 'cancelled', 'rejected'].includes(item.status),
+      ),
     [bookings],
   );
 
-  const handleSubmit = async ({ car: selectedCar, days, total, form }) => {
-    const booking = {
-      id: createBookingId(),
-      carId: selectedCar.id,
-      carName: selectedCar.name,
-      carImage: selectedCar.image,
-      status: 'pending',
-      days,
-      total,
-      dailyRate: selectedCar.price,
-      deposit: selectedCar.deposit,
+  const handleSubmit = async ({ car, form }) => {
+    const res = await bookingApi.create({
+      carId: car.id,
+      fullName: form.fullName,
+      email: form.email,
+      phone: form.phone,
       location: form.location,
       pickupDate: form.pickupDate,
       returnDate: form.returnDate,
       delivery: form.delivery,
-      fullName: form.fullName,
-      email: form.email,
-      phone: form.phone,
-      notes: form.notes,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      notes: form.notes || undefined,
+    });
 
-    const next = addBooking(booking);
-    setBookings(next);
-    setSuccessId(booking.id);
+    const created = normalizeBooking(res.data);
+    setSuccessCode(created.code);
     setTab('history');
     setSearchParams({}, { replace: true });
+
+    if (isAuthenticated) {
+      setBookings((prev) => [created, ...prev.filter((b) => b.id !== created.id)]);
+    }
   };
 
-  const handleCancel = (id) => {
+  const handleCancel = async (id) => {
     const booking = bookings.find((item) => item.id === id);
     if (!booking) return;
     const confirmed = window.confirm(
-      `Cancel request ${booking.id} for ${booking.carName}? Our Dubai concierge will be notified.`,
+      `Cancel request ${booking.code} for ${booking.carName}? Our Dubai concierge will be notified.`,
     );
     if (!confirmed) return;
-    setBookings(updateBookingStatus(id, 'cancelled'));
-    if (successId === id) setSuccessId(null);
+    try {
+      const res = await bookingApi.cancel(id);
+      const updated = normalizeBooking(res.data);
+      setBookings((prev) => prev.map((item) => (item.id === id ? updated : item)));
+      if (successCode === booking.code) setSuccessCode(null);
+    } catch (err) {
+      window.alert(err.message || 'Could not cancel booking');
+    }
   };
 
   return (
@@ -141,7 +200,7 @@ export default function BookingsPage() {
       </section>
 
       <div className="container mx-auto px-margin-mobile md:px-margin-desktop py-8 sm:py-10">
-        {successId && tab === 'history' && (
+        {successCode && tab === 'history' && (
           <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-secondary/25 bg-secondary-container/25 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-on-secondary">
@@ -150,14 +209,23 @@ export default function BookingsPage() {
               <div>
                 <p className="font-bold text-on-surface">Request sent</p>
                 <p className="text-sm text-on-surface-variant">
-                  Reference <span className="font-semibold text-on-surface">{successId}</span>. Our Dubai
+                  Reference <span className="font-semibold text-on-surface">{successCode}</span>. Our Dubai
                   team will confirm shortly.
+                  {!isAuthenticated && (
+                    <>
+                      {' '}
+                      <Link to="/login" className="font-semibold text-secondary hover:underline">
+                        Log in
+                      </Link>{' '}
+                      to track this booking later.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => setSuccessId(null)}
+              onClick={() => setSuccessCode(null)}
               className="self-start sm:self-auto text-sm font-semibold text-primary hover:underline"
             >
               Dismiss
@@ -167,11 +235,11 @@ export default function BookingsPage() {
 
         {tab === 'request' && (
           <div className="space-y-4">
-            {car && (
+            {selectedCarName && (
               <p className="text-sm text-on-surface-variant">
                 Booking{' '}
-                <Link to={`/cars/${car.id}`} className="font-semibold text-secondary hover:underline">
-                  {car.name}
+                <Link to={`/cars/${carId}`} className="font-semibold text-secondary hover:underline">
+                  {selectedCarName}
                 </Link>
                 . Need a different car?{' '}
                 <Link to="/cars" className="font-semibold text-secondary hover:underline">
@@ -186,7 +254,45 @@ export default function BookingsPage() {
 
         {tab === 'history' && (
           <div className="space-y-8">
-            {bookings.length === 0 ? (
+            {authLoading || listLoading ? (
+              <p className="text-on-surface-variant">Loading your bookings…</p>
+            ) : !isAuthenticated ? (
+              <div className="rounded-2xl border border-dashed border-on-surface/15 bg-surface-container-low px-6 py-14 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-secondary-fixed/40">
+                  <MaterialIcon name="lock" className="text-2xl text-primary" />
+                </div>
+                <h2 className="text-xl font-bold">Log in to view bookings</h2>
+                <p className="mx-auto mt-2 max-w-md text-on-surface-variant">
+                  You can submit a rental request without an account. Sign in to see status updates and cancel
+                  pending requests.
+                </p>
+                <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <Link
+                    to="/login"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-primary px-6 text-label-sm uppercase tracking-widest text-on-primary hover:bg-tertiary transition-colors"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-primary px-6 text-label-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors"
+                  >
+                    Create account
+                  </Link>
+                </div>
+              </div>
+            ) : listError ? (
+              <div className="rounded-2xl border border-error/20 bg-error-container/30 px-6 py-8 text-center">
+                <p className="text-on-error-container">{listError}</p>
+                <button
+                  type="button"
+                  onClick={loadMine}
+                  className="mt-4 text-sm font-semibold text-primary hover:underline"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : bookings.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-on-surface/15 bg-surface-container-low px-6 py-14 text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-secondary-fixed/40">
                   <MaterialIcon name="event_busy" className="text-2xl text-primary" />
