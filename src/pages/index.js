@@ -4,3 +4,5 @@ export { default as CarDetailPage } from './CarDetailPage';
 export { default as LoginPage } from './LoginPage';
 export { default as RegisterPage } from './RegisterPage';
 export { default as BookingsPage } from './BookingsPage';
+export { default as PaySuccessPage } from './PaySuccessPage';
+export { default as PayCancelledPage } from './PayCancelledPage';

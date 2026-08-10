@@ -1,22 +1,20 @@
 import { useId, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DateRangePicker from '../common/DateRangePicker';
 import MaterialIcon from '../common/MaterialIcon';
 import { CAR_TYPES, LOCATIONS } from '../../data/cars';
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { addDaysISO, todayISO } from '../../utils/bookingsStorage';
 
 export default function HeroSearchBar() {
   const navigate = useNavigate();
   const baseId = useId();
   const locationId = `${baseId}-location`;
-  const dateId = `${baseId}-date`;
   const typeId = `${baseId}-type`;
 
   const minDate = useMemo(() => todayISO(), []);
   const [location, setLocation] = useState('');
   const [pickupDate, setPickupDate] = useState(minDate);
+  const [returnDate, setReturnDate] = useState(addDaysISO(minDate, 2));
   const [carType, setCarType] = useState('any');
 
   const handleSubmit = (event) => {
@@ -25,6 +23,7 @@ export default function HeroSearchBar() {
     if (location) params.set('location', location);
     if (carType && carType !== 'any') params.set('type', carType);
     if (pickupDate) params.set('date', pickupDate);
+    if (returnDate) params.set('returnDate', returnDate);
     const query = params.toString();
     navigate(query ? `/cars?${query}` : '/cars');
   };
@@ -34,12 +33,12 @@ export default function HeroSearchBar() {
       <div className="hero-search__intro">
         <h2 className="hero-search__title">Start your booking</h2>
         <p className="hero-search__help">
-          Choose a Dubai pickup area, date, and fleet category — Essential to Supercar.
+          Choose a Dubai pickup area, dates, and fleet category — only free cars are shown.
         </p>
       </div>
 
       <div className="hero-search__panel">
-        <div className="hero-search__fields">
+        <div className="hero-search__fields hero-search__fields--with-cal">
           <div className="hero-search__field">
             <label htmlFor={locationId} className="hero-search__label">
               <MaterialIcon name="location_on" className="hero-search__icon" />
@@ -64,21 +63,22 @@ export default function HeroSearchBar() {
             </div>
           </div>
 
-          <div className="hero-search__field">
-            <label htmlFor={dateId} className="hero-search__label">
+          <div className="hero-search__field hero-search__field--dates">
+            <span className="hero-search__label">
               <MaterialIcon name="calendar_month" className="hero-search__icon" />
-              Pickup date
-            </label>
-            <div className="hero-search__control">
-              <input
-                id={dateId}
-                name="date"
-                type="date"
-                min={minDate}
-                value={pickupDate}
-                onChange={(e) => setPickupDate(e.target.value)}
-                className={`hero-search__input ${pickupDate ? '' : 'hero-search__input--empty'}`}
-                required
+              Dates
+            </span>
+            <div className="hero-search__control hero-search__control--cal">
+              <DateRangePicker
+                variant="hero"
+                startDate={pickupDate}
+                endDate={returnDate}
+                minDate={minDate}
+                onChange={({ startDate, endDate }) => {
+                  if (startDate) setPickupDate(startDate);
+                  if (endDate) setReturnDate(endDate);
+                  else if (startDate) setReturnDate(addDaysISO(startDate, 2));
+                }}
               />
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function HeroSearchBar() {
 
         <button type="submit" className="hero-search__submit">
           <MaterialIcon name="search" className="text-[1.25rem]" />
-          <span>Find vehicle</span>
+          <span>Find available</span>
         </button>
       </div>
     </form>

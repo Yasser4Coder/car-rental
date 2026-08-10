@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import BookingCard from '../components/bookings/BookingCard';
 import BookingRequestForm from '../components/bookings/BookingRequestForm';
 import MaterialIcon from '../components/common/MaterialIcon';
-import { bookingApi, carApi } from '../api';
+import { bookingApi, carApi, paymentApi } from '../api';
 import { useAuthContext } from '../context/AuthContext';
 import { COMPANY } from '../data/cars';
 import { getCarPath } from '../utils/carPath';
@@ -22,6 +22,7 @@ function normalizeBooking(booking) {
     carSlug: booking.car?.slug || booking.carSlug || '',
     carImage: booking.car?.image || booking.carImage || '',
     status: booking.status,
+    paymentStatus: booking.paymentStatus || 'unpaid',
     days: booking.days,
     total: booking.total,
     dailyRate: booking.dailyRate,
@@ -43,6 +44,7 @@ export default function BookingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const carId = searchParams.get('car') || '';
   const initialDate = searchParams.get('date') || '';
+  const initialReturnDate = searchParams.get('returnDate') || '';
   const { isAuthenticated, loading: authLoading } = useAuthContext();
 
   const [tab, setTab] = useState(carId ? 'request' : 'history');
@@ -52,6 +54,16 @@ export default function BookingsPage() {
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState('');
   const [successCode, setSuccessCode] = useState(null);
+  const [pendingPay, setPendingPay] = useState(null);
+  const [payingId, setPayingId] = useState(null);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
+
+  useEffect(() => {
+    paymentApi
+      .getConfig()
+      .then((res) => setPaymentsEnabled(Boolean(res.configured)))
+      .catch(() => setPaymentsEnabled(false));
+  }, []);
 
   useEffect(() => {
     if (carId) setTab('request');
@@ -120,15 +132,53 @@ export default function BookingsPage() {
       returnDate: form.returnDate,
       delivery: form.delivery,
       notes: form.notes || undefined,
+      payNow: paymentsEnabled,
     });
 
     const created = normalizeBooking(res.data);
+
+    if (res.checkoutUrl) {
+      window.location.href = res.checkoutUrl;
+      return;
+    }
+
     setSuccessCode(created.code);
+    setPendingPay(
+      paymentsEnabled
+        ? res.checkoutError
+          ? { booking: created, error: res.checkoutError }
+          : { booking: created, error: '' }
+        : null,
+    );
     setTab('history');
     setSearchParams({}, { replace: true });
 
     if (isAuthenticated) {
       setBookings((prev) => [created, ...prev.filter((b) => b.id !== created.id)]);
+    }
+  };
+
+  const startCheckout = async (booking) => {
+    if (!paymentsEnabled) {
+      window.alert(
+        'Online payments are not configured yet. Add STRIPE_SECRET_KEY (sk_test_…) to the API .env and restart the server.',
+      );
+      return;
+    }
+    setPayingId(booking.id);
+    try {
+      const body = { bookingId: booking.id };
+      if (!isAuthenticated) body.email = booking.email;
+      const res = await paymentApi.createCheckoutSession(body);
+      if (res.url) {
+        window.location.href = res.url;
+        return;
+      }
+      window.alert('Could not start payment.');
+    } catch (err) {
+      window.alert(err.message || 'Could not start payment.');
+    } finally {
+      setPayingId(null);
     }
   };
 
@@ -219,8 +269,12 @@ export default function BookingsPage() {
               <div>
                 <p className="font-bold text-on-surface">Request sent</p>
                 <p className="text-sm text-on-surface-variant">
-                  Reference <span className="font-semibold text-on-surface">{successCode}</span>. Our Dubai
-                  team will confirm shortly.
+                  Reference <span className="font-semibold text-on-surface">{successCode}</span>.
+                  {pendingPay?.error
+                    ? ` Online payment could not start (${pendingPay.error}). Use Pay now below to retry.`
+                    : paymentsEnabled
+                      ? ' Complete card payment to confirm your rental.'
+                      : ' Our Dubai team will confirm shortly.'}
                   {!isAuthenticated && (
                     <>
                       {' '}
@@ -231,11 +285,25 @@ export default function BookingsPage() {
                     </>
                   )}
                 </p>
+                {pendingPay?.booking && paymentsEnabled && (
+                  <button
+                    type="button"
+                    disabled={payingId === pendingPay.booking.id}
+                    onClick={() => startCheckout(pendingPay.booking)}
+                    className="mt-3 inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-primary px-3 text-sm font-semibold text-on-primary disabled:opacity-60"
+                  >
+                    <MaterialIcon name="credit_card" className="text-base" />
+                    {payingId === pendingPay.booking.id ? 'Redirecting…' : 'Pay now'}
+                  </button>
+                )}
               </div>
             </div>
             <button
               type="button"
-              onClick={() => setSuccessCode(null)}
+              onClick={() => {
+                setSuccessCode(null);
+                setPendingPay(null);
+              }}
               className="self-start sm:self-auto text-sm font-semibold text-primary hover:underline"
             >
               Dismiss
@@ -261,7 +329,13 @@ export default function BookingsPage() {
                 .
               </p>
             )}
-            <BookingRequestForm carId={carId} initialDate={initialDate} onSubmit={handleSubmit} />
+            <BookingRequestForm
+              carId={carId}
+              initialDate={initialDate}
+              initialReturnDate={initialReturnDate}
+              onSubmit={handleSubmit}
+              paymentsEnabled={paymentsEnabled}
+            />
           </div>
         )}
 
@@ -340,7 +414,13 @@ export default function BookingsPage() {
                     </div>
                     <div className="space-y-4">
                       {activeBookings.map((booking) => (
-                        <BookingCard key={booking.id} booking={booking} onCancel={handleCancel} />
+                        <BookingCard
+                          key={booking.id}
+                          booking={booking}
+                          onCancel={handleCancel}
+                          onPay={paymentsEnabled ? startCheckout : undefined}
+                          payingId={payingId}
+                        />
                       ))}
                     </div>
                   </section>
@@ -354,7 +434,13 @@ export default function BookingsPage() {
                     </div>
                     <div className="space-y-4">
                       {pastBookings.map((booking) => (
-                        <BookingCard key={booking.id} booking={booking} onCancel={handleCancel} />
+                        <BookingCard
+                          key={booking.id}
+                          booking={booking}
+                          onCancel={handleCancel}
+                          onPay={paymentsEnabled ? startCheckout : undefined}
+                          payingId={payingId}
+                        />
                       ))}
                     </div>
                   </section>

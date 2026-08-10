@@ -46,9 +46,13 @@ function formatDate(value) {
   });
 }
 
-export default function BookingCard({ booking, onCancel }) {
+export default function BookingCard({ booking, onCancel, onPay, payingId }) {
   const status = STATUS[booking.status] || STATUS.pending;
   const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
+  const canPay =
+    booking.status === 'pending' &&
+    (booking.paymentStatus === 'unpaid' || !booking.paymentStatus);
+  const isPaying = payingId === booking.id;
 
   return (
     <article className="booking-card">
@@ -71,10 +75,20 @@ export default function BookingCard({ booking, onCancel }) {
               </Link>
             </h3>
           </div>
-          <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${status.className}`}>
-            <MaterialIcon name={status.icon} className="text-sm" />
-            {status.label}
-          </span>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {booking.paymentStatus === 'paid' && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                <MaterialIcon name="payments" className="text-sm" />
+                Paid
+              </span>
+            )}
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${status.className}`}
+            >
+              <MaterialIcon name={status.icon} className="text-sm" />
+              {status.label}
+            </span>
+          </div>
         </div>
 
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
@@ -88,7 +102,9 @@ export default function BookingCard({ booking, onCancel }) {
           </div>
           <div>
             <dt className="text-[11px] uppercase tracking-widest text-on-surface-variant">Location</dt>
-            <dd className="mt-0.5 font-semibold">{getLocationLabel(booking.location) || booking.location}</dd>
+            <dd className="mt-0.5 font-semibold">
+              {getLocationLabel(booking.location) || booking.location}
+            </dd>
           </div>
           <div>
             <dt className="text-[11px] uppercase tracking-widest text-on-surface-variant">Total</dt>
@@ -97,6 +113,17 @@ export default function BookingCard({ booking, onCancel }) {
         </dl>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
+          {canPay && onPay && (
+            <button
+              type="button"
+              disabled={isPaying}
+              onClick={() => onPay(booking)}
+              className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-primary px-3 text-sm font-semibold text-on-primary hover:bg-tertiary transition-colors disabled:opacity-60"
+            >
+              <MaterialIcon name="credit_card" className="text-base" />
+              {isPaying ? 'Redirecting…' : 'Pay now'}
+            </button>
+          )}
           <Link
             to={getCarPath({ slug: booking.carSlug, id: booking.carId })}
             className="inline-flex min-h-[40px] items-center gap-1 rounded-lg border border-on-surface/15 px-3 text-sm font-semibold hover:border-primary hover:text-primary transition-colors"

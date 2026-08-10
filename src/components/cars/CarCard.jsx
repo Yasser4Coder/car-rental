@@ -4,11 +4,14 @@ import { asArray, formatPrice, getCarSpecs, getTypeLabel } from '../../data/cars
 import { getCarPath } from '../../utils/carPath';
 import { resolveMediaUrl } from '../../utils/media';
 
-export default function CarCard({ car, pickupDate = '' }) {
+export default function CarCard({ car, pickupDate = '', returnDate = '' }) {
   const specs = getCarSpecs(car);
   const badges = asArray(car.badges);
   const image = resolveMediaUrl(car.image);
-  const detailPath = getCarPath(car, pickupDate ? { date: pickupDate } : {});
+  const detailPath = getCarPath(car, {
+    ...(pickupDate ? { date: pickupDate } : {}),
+    ...(returnDate ? { returnDate } : {}),
+  });
 
   return (
     <article className="group flex h-full flex-col">

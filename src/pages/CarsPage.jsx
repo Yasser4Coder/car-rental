@@ -52,6 +52,7 @@ export default function CarsPage() {
   const sort = searchParams.get('sort') || 'featured';
   const query = searchParams.get('q') || '';
   const pickupDate = searchParams.get('date') || '';
+  const returnDate = searchParams.get('returnDate') || '';
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
   const pageSize = 12;
   const [totalPages, setTotalPages] = useState(1);
@@ -66,6 +67,7 @@ export default function CarsPage() {
         sort,
         q: query || undefined,
         date: pickupDate || undefined,
+        returnDate: returnDate || undefined,
         limit: pageSize,
         page,
       })
@@ -76,11 +78,12 @@ export default function CarsPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [location, type, sort, query, pickupDate, page]);
+  }, [location, type, sort, query, pickupDate, returnDate, page]);
 
   const locationLabel = getLocationLabel(location);
   const typeLabel = type && type !== 'any' ? getTypeLabel(type) : null;
   const dateLabel = formatDate(pickupDate);
+  const returnLabel = formatDate(returnDate);
 
   const setFilter = (updates) => {
     setSearchParams(updateParams(searchParams, { ...updates, page: updates.page || '' }), {
@@ -91,6 +94,7 @@ export default function CarsPage() {
   const clearFilters = () => {
     const next = new URLSearchParams();
     if (pickupDate) next.set('date', pickupDate);
+    if (returnDate) next.set('returnDate', returnDate);
     setSearchParams(next, { replace: true });
   };
 
@@ -114,7 +118,7 @@ export default function CarsPage() {
               </p>
             </div>
 
-            {(locationLabel || typeLabel || dateLabel) && (
+            {(locationLabel || typeLabel || dateLabel || returnLabel) && (
               <div className="flex flex-wrap gap-2">
                 {locationLabel && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-sm text-on-surface-variant border border-on-surface/8">
@@ -122,10 +126,11 @@ export default function CarsPage() {
                     {locationLabel}
                   </span>
                 )}
-                {dateLabel && (
+                {(dateLabel || returnLabel) && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-sm text-on-surface-variant border border-on-surface/8">
                     <MaterialIcon name="calendar_month" className="text-base text-secondary" />
-                    {dateLabel}
+                    {dateLabel || 'Pickup'}
+                    {returnLabel ? ` → ${returnLabel}` : ''}
                   </span>
                 )}
                 {typeLabel && (
@@ -161,7 +166,7 @@ export default function CarsPage() {
           <>
             <ScrollReveal className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 sm:gap-x-6 sm:gap-y-10">
               {cars.map((car) => (
-                <CarCard key={car.id} car={car} pickupDate={pickupDate} />
+                <CarCard key={car.id} car={car} pickupDate={pickupDate} returnDate={returnDate} />
               ))}
             </ScrollReveal>
 
@@ -191,16 +196,23 @@ export default function CarsPage() {
           </>
         ) : (
           <div className="mt-10 rounded-2xl border border-dashed border-on-surface/15 bg-surface-container-low px-6 py-14 text-center">
-            <h2 className="text-xl font-bold">No vehicles match</h2>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-secondary-fixed/40">
+              <MaterialIcon name="event_busy" className="text-2xl text-primary" />
+            </div>
+            <h2 className="text-xl font-bold">
+              {pickupDate ? 'No cars free for those dates' : 'No vehicles match'}
+            </h2>
             <p className="mx-auto mt-2 max-w-md text-on-surface-variant">
-              Try another city, clear the car type, or search a different brand.
+              {pickupDate
+                ? 'Every vehicle in this filter is already reserved for your trip. Try different dates or clear the type filter.'
+                : 'Try another area, clear the car type, or search a different brand.'}
             </p>
             <button
               type="button"
               onClick={clearFilters}
               className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary px-6 text-label-sm uppercase tracking-widest text-on-primary"
             >
-              Reset filters
+              {pickupDate ? 'Keep dates, reset other filters' : 'Reset filters'}
             </button>
           </div>
         )}

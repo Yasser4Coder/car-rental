@@ -944,6 +944,12 @@
     gap: 0.875rem;
   }
 
+  .hero-search__field--dates .hero-search__control--cal {
+    min-height: 3rem;
+    display: flex;
+    align-items: center;
+  }
+
   .hero-search__field {
     display: flex;
     flex-direction: column;
@@ -1106,6 +1112,11 @@
       padding: 0.55rem 1rem;
       justify-content: center;
       border-right: 1px solid rgba(0, 52, 23, 0.12);
+    }
+
+    .hero-search__field--dates {
+      flex: 1.45;
+      min-width: 14rem;
     }
 
     .hero-search__field:last-child {
@@ -1274,6 +1285,367 @@
 
     .cars-filters__row {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* —— Custom date range calendar —— */
+  .gre-cal {
+    position: relative;
+    width: 100%;
+  }
+
+  .gre-cal__field-label {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #404941;
+  }
+
+  .gre-cal__trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.85rem;
+    border: 1px solid rgba(0, 52, 23, 0.14);
+    background:
+      linear-gradient(180deg, #ffffff 0%, #f7faf6 100%);
+    color: #191c1c;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .gre-cal__trigger:hover {
+    border-color: rgba(51, 107, 0, 0.45);
+  }
+
+  .gre-cal.is-open .gre-cal__trigger,
+  .gre-cal__trigger:focus-visible {
+    border-color: #336b00;
+    box-shadow: 0 0 0 3px rgba(51, 107, 0, 0.14);
+    outline: none;
+  }
+
+  .gre-cal.is-error .gre-cal__trigger {
+    border-color: rgba(186, 26, 26, 0.45);
+  }
+
+  .gre-cal__trigger-icon {
+    display: grid;
+    place-items: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    flex-shrink: 0;
+    border-radius: 0.7rem;
+    background: rgba(0, 52, 23, 0.08);
+    color: var(--color-primary);
+  }
+
+  .gre-cal__trigger-dates {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .gre-cal__trigger-col {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .gre-cal__trigger-kicker {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #707970;
+  }
+
+  .gre-cal__trigger-value {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gre-cal__trigger-value.is-empty {
+    color: #707970;
+    font-weight: 600;
+  }
+
+  .gre-cal__trigger-arrow {
+    color: rgba(0, 52, 23, 0.35);
+    flex-shrink: 0;
+  }
+
+  .gre-cal__nights {
+    flex-shrink: 0;
+    padding: 0.3rem 0.55rem;
+    border-radius: 9999px;
+    background: rgba(143, 249, 64, 0.35);
+    color: var(--color-primary);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .gre-cal__popover {
+    position: absolute;
+    z-index: 40;
+    top: calc(100% + 0.55rem);
+    left: 0;
+    right: 0;
+    width: min(100%, 22.5rem);
+    padding: 1rem;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(0, 52, 23, 0.1);
+    background:
+      radial-gradient(420px 180px at 0% 0%, rgba(143, 249, 64, 0.16), transparent 55%),
+      #ffffff;
+    box-shadow: 0 22px 50px rgba(0, 52, 23, 0.14);
+    animation: gre-cal-in 0.22s ease;
+  }
+
+  @keyframes gre-cal-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .gre-cal__popover-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .gre-cal__popover-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+
+  .gre-cal__popover-hint {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    color: #707970;
+  }
+
+  .gre-cal__icon-btn {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 0.55rem;
+    background: rgba(0, 52, 23, 0.06);
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .gre-cal__icon-btn:hover {
+    background: rgba(0, 52, 23, 0.12);
+  }
+
+  .gre-cal__month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
+  }
+
+  .gre-cal__month-label {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+
+  .gre-cal__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.15rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .gre-cal__weekdays span {
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #707970;
+    padding: 0.25rem 0;
+  }
+
+  .gre-cal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.2rem;
+  }
+
+  .gre-cal__day {
+    position: relative;
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 0.65rem;
+    background: transparent;
+    color: #191c1c;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+  }
+
+  .gre-cal__day:not(.is-empty):not(.is-disabled):hover {
+    background: rgba(51, 107, 0, 0.1);
+  }
+
+  .gre-cal__day.is-empty {
+    pointer-events: none;
+  }
+
+  .gre-cal__day.is-disabled {
+    color: #b7beb8;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    text-decoration-color: rgba(186, 26, 26, 0.35);
+  }
+
+  .gre-cal__day.is-today:not(.is-edge) span {
+    box-shadow: inset 0 0 0 1.5px rgba(51, 107, 0, 0.45);
+    border-radius: 9999px;
+    width: 1.85rem;
+    height: 1.85rem;
+    display: grid;
+    place-items: center;
+  }
+
+  .gre-cal__day.is-in-range {
+    background: rgba(143, 249, 64, 0.28);
+    border-radius: 0.35rem;
+  }
+
+  .gre-cal__day.is-edge {
+    background: var(--color-primary);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(0, 52, 23, 0.22);
+  }
+
+  .gre-cal__day.is-start {
+    border-radius: 0.75rem 0.35rem 0.35rem 0.75rem;
+  }
+
+  .gre-cal__day.is-end {
+    border-radius: 0.35rem 0.75rem 0.75rem 0.35rem;
+  }
+
+  .gre-cal__day.is-start.is-end {
+    border-radius: 0.75rem;
+  }
+
+  .gre-cal__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 52, 23, 0.08);
+  }
+
+  .gre-cal__quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .gre-cal__quick button,
+  .gre-cal__clear {
+    min-height: 1.85rem;
+    padding: 0 0.6rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 52, 23, 0.12);
+    background: rgba(0, 52, 23, 0.04);
+    color: var(--color-primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .gre-cal__quick button:hover {
+    background: rgba(143, 249, 64, 0.28);
+    border-color: rgba(51, 107, 0, 0.25);
+  }
+
+  .gre-cal__clear {
+    border-color: transparent;
+    background: transparent;
+    color: #707970;
+  }
+
+  .gre-cal__clear:hover {
+    color: #a11d1d;
+    background: rgba(161, 29, 29, 0.06);
+  }
+
+  .gre-cal--hero .gre-cal__trigger {
+    min-height: 3.1rem;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .gre-cal--hero .gre-cal__trigger:hover,
+  .gre-cal--hero.is-open .gre-cal__trigger,
+  .gre-cal--hero .gre-cal__trigger:focus-visible {
+    border: 0;
+    box-shadow: none;
+  }
+
+  .gre-cal--hero .gre-cal__trigger-icon {
+    display: none;
+  }
+
+  .gre-cal--hero .gre-cal__popover {
+    left: 0;
+    right: auto;
+    width: min(22.5rem, calc(100vw - 2.5rem));
+  }
+
+  @media (max-width: 640px) {
+    .gre-cal__popover {
+      width: 100%;
+    }
+
+    .gre-cal__nights {
+      display: none;
     }
   }
 

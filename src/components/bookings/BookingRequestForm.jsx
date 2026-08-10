@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import DateRangePicker from '../common/DateRangePicker';
 import MaterialIcon from '../common/MaterialIcon';
 import { carApi } from '../../api';
 import { useAuthContext } from '../../context/AuthContext';
@@ -23,7 +24,21 @@ const emptyForm = {
   notes: '',
 };
 
-export default function BookingRequestForm({ carId, initialDate = '', onSubmit }) {
+function formatShortDate(value) {
+  if (!value) return '—';
+  return new Date(`${value}T00:00:00`).toLocaleDateString('en-AE', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+export default function BookingRequestForm({
+  carId,
+  initialDate = '',
+  initialReturnDate = '',
+  onSubmit,
+  paymentsEnabled = false,
+}) {
   const baseId = useId();
   const { user } = useAuthContext();
   const minDate = useMemo(() => todayISO(), []);
@@ -33,14 +48,23 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
   const [carError, setCarError] = useState('');
   const [form, setForm] = useState(() => {
     const pickup = initialDate && initialDate >= todayISO() ? initialDate : todayISO();
+    const ret =
+      initialReturnDate && initialReturnDate >= pickup
+        ? initialReturnDate
+        : addDaysISO(pickup, 2);
     return {
       ...emptyForm,
       pickupDate: pickup,
-      returnDate: addDaysISO(pickup, 2),
+      returnDate: ret,
     };
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [availability, setAvailability] = useState({
+    loading: false,
+    available: true,
+    conflicts: [],
+  });
 
   useEffect(() => {
     if (!carId) {
@@ -79,11 +103,51 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
     }));
   }, [user]);
 
+  useEffect(() => {
+    if (!carId || !form.pickupDate || !form.returnDate || form.returnDate < form.pickupDate) {
+      setAvailability({ loading: false, available: true, conflicts: [] });
+      return;
+    }
+
+    let cancelled = false;
+    setAvailability((prev) => ({ ...prev, loading: true }));
+    const timer = setTimeout(() => {
+      carApi
+        .checkAvailability(carId, form.pickupDate, form.returnDate)
+        .then((res) => {
+          if (cancelled) return;
+          setAvailability({
+            loading: false,
+            available: Boolean(res.available),
+            conflicts: res.conflicts || [],
+          });
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setAvailability({ loading: false, available: true, conflicts: [] });
+        });
+    }, 280);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [carId, form.pickupDate, form.returnDate]);
+
   const days = rentalDays(form.pickupDate, form.returnDate);
   const subtotal = car ? Number(car.price) * days : 0;
   const availableLocations = LOCATIONS.filter((item) =>
     car ? (car.locations || []).includes(item.value) : true,
   );
+  const datesBlocked = !availability.loading && !availability.available;
+  const fleetLink = (() => {
+    const params = new URLSearchParams();
+    if (form.pickupDate) params.set('date', form.pickupDate);
+    if (form.returnDate) params.set('returnDate', form.returnDate);
+    if (form.location) params.set('location', form.location);
+    const q = params.toString();
+    return q ? `/cars?${q}` : '/cars';
+  })();
 
   const update = (field) => (event) => {
     const value = event.target.value;
@@ -94,7 +158,16 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
       }
       return next;
     });
-    setErrors((prev) => ({ ...prev, [field]: '' }));
+    setErrors((prev) => ({ ...prev, [field]: '', form: '' }));
+  };
+
+  const updateDates = ({ startDate, endDate }) => {
+    setForm((prev) => ({
+      ...prev,
+      pickupDate: startDate || '',
+      returnDate: endDate || (startDate ? addDaysISO(startDate, 2) : ''),
+    }));
+    setErrors((prev) => ({ ...prev, pickupDate: '', returnDate: '', form: '' }));
   };
 
   const validate = () => {
@@ -107,6 +180,9 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
     if (!form.returnDate) next.returnDate = 'Choose a return date';
     if (form.pickupDate && form.returnDate && form.returnDate < form.pickupDate) {
       next.returnDate = 'Return must be after pickup';
+    }
+    if (datesBlocked) {
+      next.form = 'This car is already booked for those dates. Pick different dates or another vehicle.';
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -131,6 +207,12 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
         },
       });
     } catch (err) {
+      const conflicts = err.details?.conflicts || [];
+      setAvailability((prev) =>
+        conflicts.length
+          ? { loading: false, available: false, conflicts }
+          : prev,
+      );
       setErrors((prev) => ({ ...prev, form: err.message || 'Could not submit request' }));
     } finally {
       setSubmitting(false);
@@ -169,14 +251,70 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
     <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8" noValidate>
       <div className="lg:col-span-7 space-y-5">
         {errors.form && (
-          <p className="rounded-xl border border-error/30 bg-error-container/40 px-4 py-3 text-sm text-on-error-container">
-            {errors.form}
-          </p>
+          <div className="rounded-xl border border-error/30 bg-error-container/40 px-4 py-3 text-sm text-on-error-container">
+            <p className="font-semibold">{errors.form}</p>
+            {datesBlocked && (
+              <Link to={fleetLink} className="mt-2 inline-flex font-semibold underline">
+                See cars available for these dates
+              </Link>
+            )}
+          </div>
+        )}
+
+        {datesBlocked && !errors.form && (
+          <div className="rounded-xl border border-error/25 bg-error-container/30 px-4 py-4">
+            <div className="flex items-start gap-3">
+              <MaterialIcon name="event_busy" className="text-error mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-on-error-container">Those dates are taken</p>
+                <p className="mt-1 text-sm text-on-error-container/90">
+                  {car.name} is already reserved for part of{' '}
+                  <span className="font-semibold">
+                    {formatShortDate(form.pickupDate)} – {formatShortDate(form.returnDate)}
+                  </span>
+                  . Choose other dates or another vehicle.
+                </p>
+                {availability.conflicts.length > 0 && (
+                  <ul className="mt-3 space-y-1 text-sm text-on-error-container">
+                    {availability.conflicts.slice(0, 3).map((c) => (
+                      <li key={`${c.pickupDate}-${c.returnDate}`} className="flex items-center gap-2">
+                        <MaterialIcon name="calendar_month" className="text-base" />
+                        Booked {formatShortDate(c.pickupDate)} – {formatShortDate(c.returnDate)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    to={fleetLink}
+                    className="inline-flex min-h-[40px] items-center rounded-lg bg-primary px-3 text-sm font-semibold text-on-primary"
+                  >
+                    Find available cars
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!datesBlocked && !availability.loading && form.pickupDate && form.returnDate && (
+          <div className="rounded-xl border border-secondary/20 bg-secondary-container/20 px-4 py-3 text-sm">
+            <p className="flex items-center gap-2 font-semibold text-primary">
+              <MaterialIcon name="event_available" className="text-secondary" />
+              Available for your dates
+            </p>
+            <p className="mt-1 text-on-surface-variant pl-7">
+              {formatShortDate(form.pickupDate)} – {formatShortDate(form.returnDate)} · {days}{' '}
+              {days === 1 ? 'day' : 'days'}
+            </p>
+          </div>
         )}
 
         <section className="booking-panel">
           <h2 className="text-lg font-bold">Your details</h2>
-          <p className="mt-1 text-sm text-on-surface-variant">We’ll confirm by phone or WhatsApp within Dubai business hours.</p>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            We’ll confirm by phone or WhatsApp within Dubai business hours.
+          </p>
 
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field
@@ -223,10 +361,17 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
 
         <section className="booking-panel">
           <h2 className="text-lg font-bold">Trip details</h2>
-          <p className="mt-1 text-sm text-on-surface-variant">Pickup across selected Dubai areas, with optional hotel delivery.</p>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Pickup across selected Dubai areas, with optional hotel delivery.
+          </p>
 
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field id={`${baseId}-location`} label="Pickup area" error={errors.location} className="sm:col-span-2">
+            <Field
+              id={`${baseId}-location`}
+              label="Pickup area"
+              error={errors.location}
+              className="sm:col-span-2"
+            >
               <select
                 id={`${baseId}-location`}
                 value={form.location}
@@ -241,34 +386,40 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
               </select>
             </Field>
 
-            <Field id={`${baseId}-pickup`} label="Pickup date" error={errors.pickupDate}>
-              <input
-                id={`${baseId}-pickup`}
-                type="date"
-                min={minDate}
-                value={form.pickupDate}
-                onChange={update('pickupDate')}
-                className="booking-input"
+            <div className="sm:col-span-2">
+              <DateRangePicker
+                label="Rental dates"
+                startDate={form.pickupDate}
+                endDate={form.returnDate}
+                minDate={minDate}
+                conflicts={availability.conflicts}
+                error={datesBlocked || Boolean(errors.pickupDate || errors.returnDate)}
+                onChange={updateDates}
               />
-            </Field>
+              {(errors.pickupDate || errors.returnDate) && (
+                <p className="mt-1 text-sm text-error">
+                  {errors.pickupDate || errors.returnDate}
+                </p>
+              )}
+            </div>
 
-            <Field id={`${baseId}-return`} label="Return date" error={errors.returnDate}>
-              <input
-                id={`${baseId}-return`}
-                type="date"
-                min={form.pickupDate || minDate}
-                value={form.returnDate}
-                onChange={update('returnDate')}
-                className="booking-input"
-              />
-            </Field>
+            {availability.loading && (
+              <p className="sm:col-span-2 text-sm text-on-surface-variant flex items-center gap-2">
+                <MaterialIcon name="hourglass_top" className="text-base" />
+                Checking availability…
+              </p>
+            )}
 
             <fieldset className="sm:col-span-2">
               <legend className="booking-label">Handover</legend>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {[
                   { value: 'self', label: 'Collect from desk', hint: COMPANY.address },
-                  { value: 'delivery', label: 'Hotel / residence delivery', hint: 'Within selected areas' },
+                  {
+                    value: 'delivery',
+                    label: 'Hotel / residence delivery',
+                    hint: 'Within selected areas',
+                  },
                 ].map((option) => (
                   <label
                     key={option.value}
@@ -337,17 +488,38 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
           </dl>
 
           <p className="mt-3 text-xs text-on-surface-variant leading-relaxed">
-            Final amount confirmed by concierge. Deposit held on a credit card in the renter’s name.
+            {paymentsEnabled
+              ? 'You’ll be redirected to secure Stripe Checkout to pay the rental total in AED. Security deposit is handled at pickup.'
+              : 'Final amount confirmed by concierge. Deposit held on a credit card in the renter’s name.'}
           </p>
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || datesBlocked || availability.loading}
             className="mt-5 inline-flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl bg-primary px-6 text-label-sm uppercase tracking-widest text-on-primary hover:bg-tertiary disabled:opacity-60 transition-colors"
           >
-            <MaterialIcon name="send" />
-            {submitting ? 'Sending…' : 'Submit request'}
+            <MaterialIcon
+              name={datesBlocked ? 'event_busy' : paymentsEnabled ? 'credit_card' : 'send'}
+            />
+            {datesBlocked
+              ? 'Dates unavailable'
+              : submitting
+                ? paymentsEnabled
+                  ? 'Opening payment…'
+                  : 'Sending…'
+                : paymentsEnabled
+                  ? 'Pay & confirm'
+                  : 'Submit request'}
           </button>
+
+          {datesBlocked && (
+            <Link
+              to={fleetLink}
+              className="mt-3 inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl border border-primary px-4 text-sm font-semibold hover:bg-primary hover:text-on-primary transition-colors"
+            >
+              Browse available cars
+            </Link>
+          )}
 
           <a
             href={`tel:${COMPANY.phone.replace(/\s/g, '')}`}

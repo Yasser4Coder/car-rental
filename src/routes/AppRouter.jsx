@@ -7,6 +7,8 @@ import {
   LoginPage,
   RegisterPage,
   BookingsPage,
+  PaySuccessPage,
+  PayCancelledPage,
 } from '../pages';
 
 export default function AppRouter() {
@@ -20,6 +22,8 @@ export default function AppRouter() {
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="bookings" element={<BookingsPage />} />
+          <Route path="bookings/pay-success" element={<PaySuccessPage />} />
+          <Route path="bookings/pay-cancelled" element={<PayCancelledPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -12,12 +12,27 @@ export const carApi = {
   getBySlug: (slugOrId) => api.get(`/cars/${encodeURIComponent(slugOrId)}`),
   /** @deprecated Prefer getBySlug — kept for booking forms that still pass numeric ids */
   getById: (id) => api.get(`/cars/${encodeURIComponent(id)}`),
+  checkAvailability: (slugOrId, pickupDate, returnDate) => {
+    const params = new URLSearchParams({ pickupDate });
+    if (returnDate) params.set('returnDate', returnDate);
+    return api.get(`/cars/${encodeURIComponent(slugOrId)}/availability?${params}`);
+  },
 };
 
 export const bookingApi = {
   getMine: () => api.get('/bookings/mine'),
   create: (data) => api.post('/bookings', data),
   cancel: (id) => api.patch(`/bookings/${id}/cancel`),
+};
+
+export const paymentApi = {
+  getConfig: () => api.get('/payments/config'),
+  createCheckoutSession: (body) => api.post('/payments/checkout-session', body),
+  checkoutStatus: (sessionId, email) => {
+    const params = new URLSearchParams({ session_id: sessionId });
+    if (email) params.set('email', email);
+    return api.get(`/payments/checkout-status?${params}`);
+  },
 };
 
 export const authApi = {

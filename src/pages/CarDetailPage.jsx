@@ -30,11 +30,13 @@ export default function CarDetailPage() {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const pickupDate = searchParams.get('date');
+  const returnDate = searchParams.get('returnDate') || '';
   const [car, setCar] = useState(null);
   const [related, setRelated] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [availability, setAvailability] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -49,6 +51,26 @@ export default function CarDetailPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!car || !pickupDate) {
+      setAvailability(null);
+      return;
+    }
+    let cancelled = false;
+    const end = returnDate && returnDate >= pickupDate ? returnDate : pickupDate;
+    carApi
+      .checkAvailability(car.slug || car.id, pickupDate, end)
+      .then((res) => {
+        if (!cancelled) setAvailability(res);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailability(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [car, pickupDate, returnDate]);
 
   const specs = useMemo(() => (car ? getDetailSpecs(car) : []), [car]);
   const gallery = car
@@ -78,12 +100,28 @@ export default function CarDetailPage() {
   }
 
   if (car.slug && /^\d+$/.test(String(slug || '')) && car.slug !== String(slug)) {
-    return <Navigate to={getCarPath(car, pickupDate ? { date: pickupDate } : {})} replace />;
+    return (
+      <Navigate
+        to={getCarPath(car, {
+          ...(pickupDate ? { date: pickupDate } : {}),
+          ...(returnDate ? { returnDate } : {}),
+        })}
+        replace
+      />
+    );
   }
 
-  const bookingHref = pickupDate
-    ? `/bookings?car=${car.id}&date=${encodeURIComponent(pickupDate)}`
-    : `/bookings?car=${car.id}`;
+  const datesTaken = availability && availability.available === false;
+  const bookingParams = new URLSearchParams({ car: String(car.id) });
+  if (pickupDate) bookingParams.set('date', pickupDate);
+  if (returnDate) bookingParams.set('returnDate', returnDate);
+  const bookingHref = `/bookings?${bookingParams}`;
+  const fleetAltHref = (() => {
+    const p = new URLSearchParams();
+    if (pickupDate) p.set('date', pickupDate);
+    if (returnDate) p.set('returnDate', returnDate);
+    return p.toString() ? `/cars?${p}` : '/cars';
+  })();
 
   return (
     <div className="bg-surface">
@@ -183,20 +221,65 @@ export default function CarDetailPage() {
               </div>
 
               {pickupDate && (
-                <p className="mt-4 inline-flex items-center gap-2 text-sm text-on-surface-variant">
-                  <MaterialIcon name="calendar_month" className="text-base text-secondary" />
-                  Requested pickup: {formatDate(pickupDate)}
-                </p>
+                <div
+                  className={`mt-4 rounded-xl px-4 py-3 text-sm ${
+                    datesTaken
+                      ? 'border border-error/25 bg-error-container/30 text-on-error-container'
+                      : availability?.available
+                        ? 'border border-secondary/20 bg-secondary-container/25 text-primary'
+                        : 'text-on-surface-variant'
+                  }`}
+                >
+                  <p className="flex items-center gap-2 font-semibold">
+                    <MaterialIcon
+                      name={datesTaken ? 'event_busy' : 'calendar_month'}
+                      className="text-base"
+                    />
+                    {datesTaken
+                      ? 'Unavailable for your dates'
+                      : availability?.available
+                        ? 'Available for your dates'
+                        : 'Requested pickup'}
+                  </p>
+                  <p className="mt-1 pl-7">
+                    {formatDate(pickupDate)}
+                    {returnDate ? ` → ${formatDate(returnDate)}` : ''}
+                  </p>
+                  {datesTaken && (
+                    <p className="mt-2 pl-7 text-on-error-container/90">
+                      This car is already reserved then. Pick other dates or choose another vehicle.
+                    </p>
+                  )}
+                </div>
               )}
 
               <div className="mt-6 flex flex-col gap-3">
-                <Link
-                  to={bookingHref}
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary px-6 text-label-sm uppercase tracking-widest text-on-primary hover:bg-tertiary transition-colors"
-                >
-                  <MaterialIcon name="event_available" />
-                  Request booking
-                </Link>
+                {datesTaken ? (
+                  <>
+                    <Link
+                      to={fleetAltHref}
+                      className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary px-6 text-label-sm uppercase tracking-widest text-on-primary hover:bg-tertiary transition-colors"
+                    >
+                      <MaterialIcon name="search" />
+                      Find available cars
+                    </Link>
+                    <Link
+                      to={`/bookings?car=${car.id}`}
+                      className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-primary px-6 text-label-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors"
+                    >
+                      <MaterialIcon name="edit_calendar" />
+                      Try different dates
+                    </Link>
+                  </>
+                ) : (
+                  <Link
+                    to={bookingHref}
+                    className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary px-6 text-label-sm uppercase tracking-widest text-on-primary hover:bg-tertiary transition-colors"
+                  >
+                    <MaterialIcon name="event_available" />
+                    Request booking
+                  </Link>
+                )}
                 <a
                   href={`tel:${COMPANY.phone.replace(/\s/g, '')}`}
                   className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-primary px-6 text-label-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors"
@@ -249,7 +332,12 @@ export default function CarDetailPage() {
             <h2 className="text-2xl font-bold">Similar in Dubai</h2>
             <div className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
               {related.map((item) => (
-                <CarCard key={item.id} car={item} pickupDate={pickupDate || ''} />
+                <CarCard
+                  key={item.id}
+                  car={item}
+                  pickupDate={pickupDate || ''}
+                  returnDate={returnDate || ''}
+                />
               ))}
             </div>
           </section>
