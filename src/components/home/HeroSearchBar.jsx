@@ -15,23 +15,27 @@ export default function HeroSearchBar() {
   const typeId = `${baseId}-type`;
 
   const minDate = useMemo(() => todayISO(), []);
-  const [location, setLocation] = useState('dubai-marina');
-  const [pickupDate, setPickupDate] = useState('');
+  const [location, setLocation] = useState('');
+  const [pickupDate, setPickupDate] = useState(minDate);
   const [carType, setCarType] = useState('any');
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const params = new URLSearchParams({ location });
+    const params = new URLSearchParams();
+    if (location) params.set('location', location);
     if (carType && carType !== 'any') params.set('type', carType);
     if (pickupDate) params.set('date', pickupDate);
-    navigate(`/cars?${params.toString()}`);
+    const query = params.toString();
+    navigate(query ? `/cars?${query}` : '/cars');
   };
 
   return (
     <form onSubmit={handleSubmit} className="hero-search" aria-label="Find a vehicle in Dubai">
       <div className="hero-search__intro">
         <h2 className="hero-search__title">Start your booking</h2>
-        <p className="hero-search__help">Pick an area, date, and type — we&apos;ll show available cars.</p>
+        <p className="hero-search__help">
+          Choose a Dubai pickup area, date, and fleet category — Essential to Supercar.
+        </p>
       </div>
 
       <div className="hero-search__panel">
@@ -49,6 +53,7 @@ export default function HeroSearchBar() {
                 onChange={(e) => setLocation(e.target.value)}
                 className="hero-search__input"
               >
+                <option value="">All Dubai areas</option>
                 {LOCATIONS.map((item) => (
                   <option key={item.value} value={item.value}>
                     {item.label}
@@ -73,6 +78,7 @@ export default function HeroSearchBar() {
                 value={pickupDate}
                 onChange={(e) => setPickupDate(e.target.value)}
                 className={`hero-search__input ${pickupDate ? '' : 'hero-search__input--empty'}`}
+                required
               />
             </div>
           </div>

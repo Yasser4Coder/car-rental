@@ -11,6 +11,7 @@ export const COMPANY = {
   tagline: 'Premium exotic & luxury car rental in Dubai',
 };
 
+/** Pickup areas used across the live fleet. */
 export const LOCATIONS = [
   { value: 'dubai-marina', label: 'Dubai Marina' },
   { value: 'downtown', label: 'Downtown Dubai' },
@@ -18,9 +19,10 @@ export const LOCATIONS = [
   { value: 'dxb-airport', label: 'DXB Airport' },
 ];
 
+/** Fleet categories from the catalog (essential → supercar). */
 export const CAR_TYPES = [
   { value: 'any', label: 'Any type' },
-  { value: 'essential', label: 'Essentielle' },
+  { value: 'essential', label: 'Essential' },
   { value: 'premium', label: 'Premium' },
   { value: 'prestige', label: 'Prestige' },
   { value: 'supercar', label: 'Supercar' },
