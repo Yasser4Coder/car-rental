@@ -626,6 +626,12 @@
     box-shadow: 0 10px 28px rgba(0, 52, 23, 0.05);
   }
 
+  .booking-panel:has(.gre-cal.is-open) {
+    position: relative;
+    z-index: 40;
+    overflow: visible;
+  }
+
   @media (min-width: 640px) {
     .booking-panel,
     .booking-summary {
@@ -726,10 +732,11 @@
 
   .hero-section {
     position: relative;
+    z-index: 2;
     min-height: 100svh;
     display: flex;
     align-items: stretch;
-    overflow: hidden;
+    overflow: visible;
     color: #ffffff;
   }
 
@@ -737,6 +744,7 @@
     position: absolute;
     inset: 0;
     z-index: 0;
+    overflow: hidden;
   }
 
   .hero-section__image {
@@ -906,7 +914,14 @@
 
   .hero-section__search {
     width: 100%;
+    position: relative;
+    z-index: 30;
     animation: hero-rise 0.9s ease-out 0.1s both;
+  }
+
+  .hero-search {
+    position: relative;
+    z-index: 30;
   }
 
   .hero-search__intro {
@@ -955,6 +970,13 @@
     flex-direction: column;
     gap: 0.35rem;
     min-width: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-search__field:focus-within,
+  .hero-search__field:has(.gre-cal.is-open) {
+    z-index: 40;
   }
 
   .hero-search__label {
@@ -1174,6 +1196,8 @@
     background: #ffffff;
     border: 1px solid rgba(0, 77, 37, 0.1);
     box-shadow: 0 10px 28px rgba(0, 52, 23, 0.05);
+    position: relative;
+    z-index: 5;
   }
 
   .cars-filters__search {
@@ -1217,6 +1241,12 @@
     flex-direction: column;
     gap: 0.35rem;
     min-width: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cars-filters__field:focus-within {
+    z-index: 10;
   }
 
   .cars-filters__label {
@@ -1292,6 +1322,11 @@
   .gre-cal {
     position: relative;
     width: 100%;
+    z-index: 1;
+  }
+
+  .gre-cal.is-open {
+    z-index: 80;
   }
 
   .gre-cal__field-label {
@@ -1403,7 +1438,7 @@
 
   .gre-cal__popover {
     position: absolute;
-    z-index: 40;
+    z-index: 80;
     top: calc(100% + 0.55rem);
     left: 0;
     right: 0;
