@@ -15,7 +15,11 @@ export function resolveMediaUrl(src) {
     return src;
   }
   const origin = apiOrigin();
-  const path = src.startsWith('/') ? src : `/${src}`;
+  // Prefer /api/uploads on production hosts that only proxy /api/* to Node
+  let path = src.startsWith('/') ? src : `/${src}`;
+  if (origin && path.startsWith('/uploads/')) {
+    path = `/api${path}`;
+  }
   return origin ? `${origin}${path}` : path;
 }
 
