@@ -1,17 +1,19 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import { asArray, formatPrice } from '../../data/cars';
+import { resolveMediaUrl } from '../../utils/media';
 
 export default function FeaturedCarCard({ car }) {
   const badges = asArray(car.badges);
   const specs = asArray(car.specs);
+  const image = resolveMediaUrl(car.image);
 
   return (
     <div className="group h-full">
       <div className="relative aspect-16/10 overflow-hidden mb-6 rounded-xl">
         <img
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          src={car.image}
+          src={image}
           alt={car.alt}
         />
         <div className="absolute top-4 left-4 flex gap-2 flex-wrap">

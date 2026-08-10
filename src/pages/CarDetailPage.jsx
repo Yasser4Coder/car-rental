@@ -11,6 +11,7 @@ import {
   getLocationLabel,
   getTypeLabel,
 } from '../data/cars';
+import { resolveMediaList } from '../utils/media';
 
 function formatDate(value) {
   if (!value) return null;
@@ -48,7 +49,9 @@ export default function CarDetailPage() {
   }, [id]);
 
   const specs = useMemo(() => (car ? getDetailSpecs(car) : []), [car]);
-  const gallery = car?.gallery?.length ? car.gallery : car ? [car.image] : [];
+  const gallery = car
+    ? resolveMediaList(asArray(car.gallery).length ? car.gallery : [car.image])
+    : [];
 
   if (loading) {
     return (

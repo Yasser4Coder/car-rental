@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import { asArray, formatPrice, getCarSpecs, getTypeLabel } from '../../data/cars';
+import { resolveMediaUrl } from '../../utils/media';
 
 export default function CarCard({ car, pickupDate = '' }) {
   const specs = getCarSpecs(car);
   const badges = asArray(car.badges);
+  const image = resolveMediaUrl(car.image);
   const detailPath = pickupDate
     ? `/cars/${car.id}?date=${encodeURIComponent(pickupDate)}`
     : `/cars/${car.id}`;
@@ -14,7 +16,7 @@ export default function CarCard({ car, pickupDate = '' }) {
       <Link to={detailPath} className="relative mb-5 block aspect-16/10 overflow-hidden rounded-xl">
         <img
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-          src={car.image}
+          src={image}
           alt={car.alt}
           loading="lazy"
         />

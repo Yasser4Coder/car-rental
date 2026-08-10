@@ -7,6 +7,7 @@ import MaterialIcon from '../common/MaterialIcon';
 import FeaturedCarCard from '../cars/FeaturedCarCard';
 import { carApi } from '../../api';
 import { asArray, getCarSpecs } from '../../data/cars';
+import { resolveMediaUrl } from '../../utils/media';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -16,7 +17,7 @@ function toFeaturedCard(car) {
     id: car.id,
     name: car.name,
     price: car.price,
-    image: car.image,
+    image: resolveMediaUrl(car.image),
     alt: car.alt,
     badges: asArray(car.badges),
     specs: getCarSpecs(car),

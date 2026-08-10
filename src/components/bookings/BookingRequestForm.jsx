@@ -10,6 +10,7 @@ import {
   getTypeLabel,
 } from '../../data/cars';
 import { addDaysISO, rentalDays, todayISO } from '../../utils/bookingsStorage';
+import { resolveMediaUrl } from '../../utils/media';
 
 const emptyForm = {
   fullName: '',
@@ -305,7 +306,7 @@ export default function BookingRequestForm({ carId, initialDate = '', onSubmit }
       <aside className="lg:col-span-5">
         <div className="booking-summary lg:sticky lg:top-24">
           <div className="overflow-hidden rounded-xl aspect-16/10 bg-surface-container">
-            <img src={car.image} alt={car.alt} className="h-full w-full object-cover" />
+            <img src={resolveMediaUrl(car.image)} alt={car.alt} className="h-full w-full object-cover" />
           </div>
 
           <div className="mt-4">

@@ -1,0 +1,25 @@
+/**
+ * Resolve car/upload image paths for production.
+ * DB stores "/uploads/...", but the client is on a different host than the API.
+ */
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+function apiOrigin() {
+  if (!API_URL.startsWith('http')) return '';
+  return API_URL.replace(/\/api\/?$/, '');
+}
+
+export function resolveMediaUrl(src) {
+  if (!src || typeof src !== 'string') return '';
+  if (/^https?:\/\//i.test(src) || src.startsWith('data:') || src.startsWith('blob:')) {
+    return src;
+  }
+  const origin = apiOrigin();
+  const path = src.startsWith('/') ? src : `/${src}`;
+  return origin ? `${origin}${path}` : path;
+}
+
+export function resolveMediaList(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map(resolveMediaUrl).filter(Boolean);
+}

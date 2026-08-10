@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import { formatPrice, getLocationLabel } from '../../data/cars';
+import { resolveMediaUrl } from '../../utils/media';
 
 const STATUS = {
   pending: {
@@ -51,7 +52,7 @@ export default function BookingCard({ booking, onCancel }) {
   return (
     <article className="booking-card">
       <div className="booking-card__media">
-        <img src={booking.carImage} alt={booking.carName} loading="lazy" />
+        <img src={resolveMediaUrl(booking.carImage)} alt={booking.carName} loading="lazy" />
       </div>
 
       <div className="booking-card__body">
