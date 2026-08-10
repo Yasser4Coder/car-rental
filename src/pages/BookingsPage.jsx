@@ -6,6 +6,7 @@ import MaterialIcon from '../components/common/MaterialIcon';
 import { bookingApi, carApi } from '../api';
 import { useAuthContext } from '../context/AuthContext';
 import { COMPANY } from '../data/cars';
+import { getCarPath } from '../utils/carPath';
 
 const TABS = [
   { id: 'request', label: 'New request', icon: 'edit_calendar' },
@@ -18,6 +19,7 @@ function normalizeBooking(booking) {
     code: booking.code,
     carId: booking.carId,
     carName: booking.car?.name || booking.carName || 'Vehicle',
+    carSlug: booking.car?.slug || booking.carSlug || '',
     carImage: booking.car?.image || booking.carImage || '',
     status: booking.status,
     days: booking.days,
@@ -46,6 +48,7 @@ export default function BookingsPage() {
   const [tab, setTab] = useState(carId ? 'request' : 'history');
   const [bookings, setBookings] = useState([]);
   const [selectedCarName, setSelectedCarName] = useState('');
+  const [selectedCarSlug, setSelectedCarSlug] = useState('');
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState('');
   const [successCode, setSuccessCode] = useState(null);
@@ -57,12 +60,19 @@ export default function BookingsPage() {
   useEffect(() => {
     if (!carId) {
       setSelectedCarName('');
+      setSelectedCarSlug('');
       return;
     }
     carApi
       .getById(carId)
-      .then((res) => setSelectedCarName(res.data?.name || ''))
-      .catch(() => setSelectedCarName(''));
+      .then((res) => {
+        setSelectedCarName(res.data?.name || '');
+        setSelectedCarSlug(res.data?.slug || '');
+      })
+      .catch(() => {
+        setSelectedCarName('');
+        setSelectedCarSlug('');
+      });
   }, [carId]);
 
   const loadMine = useCallback(() => {
@@ -238,7 +248,10 @@ export default function BookingsPage() {
             {selectedCarName && (
               <p className="text-sm text-on-surface-variant">
                 Booking{' '}
-                <Link to={`/cars/${carId}`} className="font-semibold text-secondary hover:underline">
+                <Link
+                  to={getCarPath({ slug: selectedCarSlug, id: carId })}
+                  className="font-semibold text-secondary hover:underline"
+                >
                   {selectedCarName}
                 </Link>
                 . Need a different car?{' '}

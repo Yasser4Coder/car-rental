@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import CarCard from '../components/cars/CarCard';
 import MaterialIcon from '../components/common/MaterialIcon';
 import { carApi } from '../api';
@@ -11,6 +11,7 @@ import {
   getLocationLabel,
   getTypeLabel,
 } from '../data/cars';
+import { getCarPath } from '../utils/carPath';
 import { resolveMediaList } from '../utils/media';
 
 function formatDate(value) {
@@ -26,7 +27,7 @@ function formatDate(value) {
 }
 
 export default function CarDetailPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const pickupDate = searchParams.get('date');
   const [car, setCar] = useState(null);
@@ -37,8 +38,9 @@ export default function CarDetailPage() {
 
   useEffect(() => {
     setLoading(true);
+    setError('');
     carApi
-      .getById(id)
+      .getBySlug(slug)
       .then((res) => {
         setCar(res.data);
         setRelated(res.related || []);
@@ -46,7 +48,7 @@ export default function CarDetailPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [slug]);
 
   const specs = useMemo(() => (car ? getDetailSpecs(car) : []), [car]);
   const gallery = car
@@ -65,12 +67,18 @@ export default function CarDetailPage() {
     return (
       <div className="container mx-auto px-margin-mobile md:px-margin-desktop pt-28 pb-16">
         <h1 className="text-3xl font-bold">Vehicle not found</h1>
-        <p className="mt-2 text-on-surface-variant">{error || 'This car may no longer be in our Dubai fleet.'}</p>
+        <p className="mt-2 text-on-surface-variant">
+          {error || 'This car may no longer be in our Dubai fleet.'}
+        </p>
         <Link to="/cars" className="mt-6 inline-flex text-secondary font-semibold hover:underline">
           Back to fleet
         </Link>
       </div>
     );
+  }
+
+  if (car.slug && /^\d+$/.test(String(slug || '')) && car.slug !== String(slug)) {
+    return <Navigate to={getCarPath(car, pickupDate ? { date: pickupDate } : {})} replace />;
   }
 
   const bookingHref = pickupDate
@@ -108,7 +116,9 @@ export default function CarDetailPage() {
                     type="button"
                     onClick={() => setActiveImage(index)}
                     className={`overflow-hidden rounded-xl aspect-16/10 border-2 transition-colors ${
-                      activeImage === index ? 'border-secondary' : 'border-transparent opacity-80 hover:opacity-100'
+                      activeImage === index
+                        ? 'border-secondary'
+                        : 'border-transparent opacity-80 hover:opacity-100'
                     }`}
                   >
                     <img src={src} alt="" className="h-full w-full object-cover" />

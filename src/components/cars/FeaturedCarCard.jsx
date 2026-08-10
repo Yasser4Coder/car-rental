@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import { asArray, formatPrice } from '../../data/cars';
+import { getCarPath } from '../../utils/carPath';
 import { resolveMediaUrl } from '../../utils/media';
 
 export default function FeaturedCarCard({ car }) {
@@ -47,7 +48,7 @@ export default function FeaturedCarCard({ car }) {
       </div>
 
       <Link
-        to={`/cars/${car.id}`}
+        to={getCarPath(car)}
         className="block w-full border border-primary py-3.5 sm:py-4 text-label-sm rounded-lg group-hover:bg-primary group-hover:text-on-primary transition-all duration-300 active:scale-95 text-center min-h-[44px] flex items-center justify-center touch-manipulation"
       >
         RENT NOW

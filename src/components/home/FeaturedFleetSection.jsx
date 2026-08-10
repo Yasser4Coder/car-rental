@@ -15,6 +15,7 @@ import 'swiper/css/pagination';
 function toFeaturedCard(car) {
   return {
     id: car.id,
+    slug: car.slug,
     name: car.name,
     price: car.price,
     image: resolveMediaUrl(car.image),

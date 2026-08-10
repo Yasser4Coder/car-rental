@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import { formatPrice, getLocationLabel } from '../../data/cars';
+import { getCarPath } from '../../utils/carPath';
 import { resolveMediaUrl } from '../../utils/media';
 
 const STATUS = {
@@ -62,7 +63,10 @@ export default function BookingCard({ booking, onCancel }) {
               {booking.code || booking.id}
             </p>
             <h3 className="mt-1 text-lg font-bold truncate">
-              <Link to={`/cars/${booking.carId}`} className="hover:text-secondary transition-colors">
+              <Link
+                to={getCarPath({ slug: booking.carSlug, id: booking.carId })}
+                className="hover:text-secondary transition-colors"
+              >
                 {booking.carName}
               </Link>
             </h3>
@@ -94,7 +98,7 @@ export default function BookingCard({ booking, onCancel }) {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Link
-            to={`/cars/${booking.carId}`}
+            to={getCarPath({ slug: booking.carSlug, id: booking.carId })}
             className="inline-flex min-h-[40px] items-center gap-1 rounded-lg border border-on-surface/15 px-3 text-sm font-semibold hover:border-primary hover:text-primary transition-colors"
           >
             View car
