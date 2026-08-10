@@ -26,7 +26,7 @@ function toFeaturedCard(car) {
 
 export default function FeaturedFleetSection() {
   const swiperRef = useRef(null);
-  const paginationRef = useRef(null);
+  const [paginationEl, setPaginationEl] = useState(null);
   const [cars, setCars] = useState([]);
   const [error, setError] = useState('');
 
@@ -58,35 +58,7 @@ export default function FeaturedFleetSection() {
         {error && <p className="mb-4 text-sm text-error">{error}</p>}
 
         <div className="relative fleet-swiper -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
-          <Swiper
-            modules={[Pagination, Autoplay]}
-            spaceBetween={14}
-            slidesPerView={1.12}
-            rewind
-            autoplay={{ delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true }}
-            pagination={{ clickable: true }}
-            breakpoints={{
-              480: { slidesPerView: 1.25, spaceBetween: 16 },
-              640: { slidesPerView: 1.5, spaceBetween: 18 },
-              768: { slidesPerView: 2.15, spaceBetween: 20 },
-              1024: { slidesPerView: 2.5, spaceBetween: 24 },
-              1280: { slidesPerView: 2.85, spaceBetween: 24 },
-            }}
-            onBeforeInit={(swiper) => {
-              swiper.params.pagination.el = paginationRef.current;
-            }}
-            onSwiper={(swiper) => {
-              swiperRef.current = swiper;
-            }}
-          >
-            {cars.map((car) => (
-              <SwiperSlide key={car.id} className="h-auto!">
-                <FeaturedCarCard car={car} />
-              </SwiperSlide>
-            ))}
-          </Swiper>
-
-          <div className="fleet-controls mt-6 sm:mt-8">
+          <div className="fleet-controls">
             <button
               type="button"
               className="fleet-nav-btn"
@@ -95,7 +67,7 @@ export default function FeaturedFleetSection() {
             >
               <MaterialIcon name="chevron_left" />
             </button>
-            <div ref={paginationRef} className="fleet-pagination" />
+            <div ref={setPaginationEl} className="fleet-pagination" />
             <button
               type="button"
               className="fleet-nav-btn"
@@ -105,6 +77,36 @@ export default function FeaturedFleetSection() {
               <MaterialIcon name="chevron_right" />
             </button>
           </div>
+
+          {paginationEl && cars.length > 0 && (
+            <Swiper
+              modules={[Pagination, Autoplay]}
+              spaceBetween={14}
+              slidesPerView={1.12}
+              rewind
+              autoplay={{ delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true }}
+              pagination={{
+                clickable: true,
+                el: paginationEl,
+              }}
+              breakpoints={{
+                480: { slidesPerView: 1.25, spaceBetween: 16 },
+                640: { slidesPerView: 1.5, spaceBetween: 18 },
+                768: { slidesPerView: 2.15, spaceBetween: 20 },
+                1024: { slidesPerView: 2.5, spaceBetween: 24 },
+                1280: { slidesPerView: 2.85, spaceBetween: 24 },
+              }}
+              onSwiper={(swiper) => {
+                swiperRef.current = swiper;
+              }}
+            >
+              {cars.map((car) => (
+                <SwiperSlide key={car.id} className="h-auto!">
+                  <FeaturedCarCard car={car} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
         </div>
       </div>
     </ScrollReveal>
