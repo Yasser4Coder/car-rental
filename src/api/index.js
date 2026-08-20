@@ -9,6 +9,7 @@ export const carApi = {
     return api.get(`/cars${query}`);
   },
   getFeatured: (limit = 12) => api.get(`/cars/featured?limit=${limit}`),
+  getPopular: (limit = 6) => api.get(`/cars/popular?limit=${limit}`),
   getBySlug: (slugOrId) => api.get(`/cars/${encodeURIComponent(slugOrId)}`),
   /** @deprecated Prefer getBySlug — kept for booking forms that still pass numeric ids */
   getById: (id) => api.get(`/cars/${encodeURIComponent(id)}`),

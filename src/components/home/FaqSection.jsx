@@ -4,17 +4,20 @@ import { FAQ_ITEMS } from '../../data/homeContent';
 
 export default function FaqSection() {
   return (
-    <ScrollReveal className="py-10 sm:py-stack-lg bg-surface">
+    <ScrollReveal id="faq" className="py-10 sm:py-stack-lg bg-surface-container-low">
       <div className="container mx-auto px-margin-mobile md:px-margin-desktop max-w-3xl">
-        <h2 className="text-2xl sm:text-headline-lg font-bold text-center mb-6 sm:mb-12">
-          Common Inquiries
-        </h2>
+        <div className="text-center mb-6 sm:mb-10 space-y-2">
+          <h2 className="text-2xl sm:text-headline-lg font-bold">Frequently asked questions</h2>
+          <p className="text-on-surface-variant text-sm sm:text-base">
+            Clear answers before you book — deposits, tourists, insurance, and more.
+          </p>
+        </div>
 
         <div className="space-y-3 sm:space-y-4">
           {FAQ_ITEMS.map((item) => (
             <details
               key={item.question}
-              className="group bg-surface-container border border-on-surface/10 rounded-xl overflow-hidden"
+              className="group bg-surface border border-on-surface/10 rounded-xl overflow-hidden"
               open={item.defaultOpen}
             >
               <summary className="flex justify-between items-center gap-4 p-4 sm:p-6 cursor-pointer list-none touch-manipulation min-h-[56px]">

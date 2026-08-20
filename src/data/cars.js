@@ -5,6 +5,7 @@ export const COMPANY = {
   address: 'Marina Plaza, Dubai Marina',
   fullAddress: 'Marina Plaza, Dubai Marina, Dubai, UAE',
   phone: '+971 4 555 0190',
+  whatsapp: '+971501234567',
   email: 'concierge@greenrental.ae',
   hours: 'Open daily · 8:00 AM – 10:00 PM',
   currency: 'AED',
@@ -62,12 +63,18 @@ export function getTypeLabel(value) {
 }
 
 export function getCarSpecs(car) {
-  const powerIcon = car.powertrain === 'Electric' ? 'bolt' : 'settings';
-  const powerLabel = car.powertrain === 'Electric' ? 'Electric' : car.transmission;
-  return [
-    { icon: powerIcon, label: powerLabel },
-    { icon: 'airline_seat_recline_normal', label: `${car.seats} Seats` },
-  ];
+  const specs = [];
+  if (car.year) specs.push({ icon: 'calendar_month', label: String(car.year) });
+  if (car.transmission) {
+    specs.push({
+      icon: car.powertrain === 'Electric' ? 'bolt' : 'settings',
+      label: car.powertrain === 'Electric' ? 'Electric' : car.transmission,
+    });
+  }
+  if (car.seats) specs.push({ icon: 'airline_seat_recline_normal', label: `${car.seats} seats` });
+  if (car.fuel) specs.push({ icon: 'local_gas_station', label: car.fuel });
+  else if (car.horsepower) specs.push({ icon: 'speed', label: `${car.horsepower} HP` });
+  return specs.slice(0, 4);
 }
 
 export function getDetailSpecs(car) {

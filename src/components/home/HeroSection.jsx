@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import HeroSearchBar from './HeroSearchBar';
-import { HERO_IMAGE } from '../../data/homeContent';
+import { HERO_IMAGE, TRUST_ITEMS } from '../../data/homeContent';
 import { COMPANY } from '../../data/cars';
 
 export default function HeroSection() {
@@ -17,16 +17,15 @@ export default function HeroSection() {
           <p className="hero-section__brand">Green Rental Experience</p>
           <p className="hero-section__place">
             <MaterialIcon name="location_on" className="text-base" />
-            {COMPANY.city}, UAE · {COMPANY.address}
+            {COMPANY.city}, UAE · Luxury · Sports · SUV rentals
           </p>
 
           <h1 className="hero-section__title">
-            Drive Dubai with <span>Confidence</span>
+            Luxury car rental in <span>Dubai</span>
           </h1>
 
           <p className="hero-section__subtitle">
-            Curated supercars, luxury SUVs, and EVs — hotel delivery across Dubai Marina,
-            Downtown, Palm Jumeirah, and DXB.
+            Rent premium cars delivered to your doorstep — hotel, residence, or DXB in minutes.
           </p>
 
           <div className="hero-section__actions">
@@ -39,19 +38,13 @@ export default function HeroSection() {
             </Link>
           </div>
 
-          <ul className="hero-section__trust" aria-label="Why rent with us">
-            <li>
-              <MaterialIcon name="verified" className="text-secondary" />
-              Instant booking
-            </li>
-            <li>
-              <MaterialIcon name="local_shipping" className="text-secondary" />
-              Dubai delivery
-            </li>
-            <li>
-              <MaterialIcon name="support_agent" className="text-secondary" />
-              24/7 concierge
-            </li>
+          <ul className="hero-section__trust" aria-label="Why book with us">
+            {TRUST_ITEMS.map((item) => (
+              <li key={item}>
+                <MaterialIcon name="check_circle" className="text-secondary" />
+                {item}
+              </li>
+            ))}
           </ul>
         </div>
 

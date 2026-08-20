@@ -1,8 +1,9 @@
 import { useId, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import DateRangePicker from '../common/DateRangePicker';
 import MaterialIcon from '../common/MaterialIcon';
 import { CAR_TYPES, LOCATIONS } from '../../data/cars';
+import { QUICK_FILTERS } from '../../data/homeContent';
 import { addDaysISO, todayISO } from '../../utils/bookingsStorage';
 
 export default function HeroSearchBar() {
@@ -17,24 +18,50 @@ export default function HeroSearchBar() {
   const [returnDate, setReturnDate] = useState(addDaysISO(minDate, 2));
   const [carType, setCarType] = useState('any');
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const goToFleet = (extra = {}) => {
     const params = new URLSearchParams();
-    if (location) params.set('location', location);
-    if (carType && carType !== 'any') params.set('type', carType);
-    if (pickupDate) params.set('date', pickupDate);
-    if (returnDate) params.set('returnDate', returnDate);
+    const loc = extra.location ?? location;
+    const type = extra.type ?? carType;
+    const pickup = extra.date ?? pickupDate;
+    const ret = extra.returnDate ?? returnDate;
+    const sort = extra.sort;
+    const q = extra.q;
+
+    if (loc) params.set('location', loc);
+    if (type && type !== 'any') params.set('type', type);
+    if (pickup) params.set('date', pickup);
+    if (ret) params.set('returnDate', ret);
+    if (sort) params.set('sort', sort);
+    if (q) params.set('q', q);
     const query = params.toString();
     navigate(query ? `/cars?${query}` : '/cars');
   };
 
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    goToFleet();
+  };
+
   return (
     <form onSubmit={handleSubmit} className="hero-search" aria-label="Find a vehicle in Dubai">
-      <div className="hero-search__intro">
-        <h2 className="hero-search__title">Start your booking</h2>
-        <p className="hero-search__help">
-          Choose a Dubai pickup area, dates, and fleet category — only free cars are shown.
-        </p>
+      <div className="hero-search__quick" aria-label="Quick filters">
+        {QUICK_FILTERS.map((filter) => (
+          <button
+            key={filter.label}
+            type="button"
+            className="hero-search__chip"
+            onClick={() =>
+              goToFleet({
+                type: filter.type || 'any',
+                sort: filter.sort || undefined,
+                q: filter.query || undefined,
+              })
+            }
+          >
+            <MaterialIcon name={filter.icon} className="text-base" />
+            {filter.label}
+          </button>
+        ))}
       </div>
 
       <div className="hero-search__panel">
@@ -42,7 +69,7 @@ export default function HeroSearchBar() {
           <div className="hero-search__field">
             <label htmlFor={locationId} className="hero-search__label">
               <MaterialIcon name="location_on" className="hero-search__icon" />
-              Pickup area
+              Location
             </label>
             <div className="hero-search__control">
               <select
@@ -86,7 +113,7 @@ export default function HeroSearchBar() {
           <div className="hero-search__field">
             <label htmlFor={typeId} className="hero-search__label">
               <MaterialIcon name="directions_car" className="hero-search__icon" />
-              Car type
+              Category
             </label>
             <div className="hero-search__control">
               <select
@@ -109,9 +136,16 @@ export default function HeroSearchBar() {
 
         <button type="submit" className="hero-search__submit">
           <MaterialIcon name="search" className="text-[1.25rem]" />
-          <span>Find available</span>
+          <span>Search</span>
         </button>
       </div>
+
+      <p className="hero-search__foot">
+        Or{' '}
+        <Link to="/cars" className="font-semibold underline-offset-2 hover:underline">
+          browse the full fleet
+        </Link>
+      </p>
     </form>
   );
 }

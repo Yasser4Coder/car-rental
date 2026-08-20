@@ -7,21 +7,19 @@ import MaterialIcon from '../common/MaterialIcon';
 import FeaturedCarCard from '../cars/FeaturedCarCard';
 import { carApi } from '../../api';
 import { asArray, getCarSpecs } from '../../data/cars';
+import { RECENT_BOOKINGS } from '../../data/homeContent';
 import { resolveMediaUrl } from '../../utils/media';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
 
-function toFeaturedCard(car) {
+function toFeaturedCard(car, index) {
   return {
-    id: car.id,
-    slug: car.slug,
-    name: car.name,
-    price: car.price,
+    ...car,
     image: resolveMediaUrl(car.image),
-    alt: car.alt,
     badges: asArray(car.badges),
     specs: getCarSpecs(car),
+    popular: Boolean(car.featured) || Number(car.rating) >= 4.8 || index < 3,
   };
 }
 
@@ -30,6 +28,7 @@ export default function FeaturedFleetSection() {
   const [paginationEl, setPaginationEl] = useState(null);
   const [cars, setCars] = useState([]);
   const [error, setError] = useState('');
+  const [ticket, setTicket] = useState(0);
 
   useEffect(() => {
     carApi
@@ -38,23 +37,45 @@ export default function FeaturedFleetSection() {
       .catch((err) => setError(err.message));
   }, []);
 
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setTicket((i) => (i + 1) % RECENT_BOOKINGS.length);
+    }, 4200);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const recent = RECENT_BOOKINGS[ticket];
+
   return (
     <ScrollReveal id="fleet" className="py-10 sm:py-stack-lg overflow-hidden">
       <div className="container mx-auto px-margin-mobile md:px-margin-desktop">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 sm:mb-10 gap-4">
           <div className="space-y-1.5 sm:space-y-2">
-            <h2 className="text-2xl sm:text-headline-lg font-bold">Featured Fleet</h2>
+            <h2 className="text-2xl sm:text-headline-lg font-bold">Featured fleet</h2>
             <p className="text-sm sm:text-base text-on-surface-variant">
-              Our current most requested masterpieces.
+              Premium cars ready for delivery across Dubai.
             </p>
           </div>
           <Link
             to="/cars"
             className="text-label-sm border-b-2 border-primary pb-1 hover:text-secondary hover:border-secondary transition-all self-start sm:self-auto"
           >
-            VIEW FULL CATALOG
+            View full catalog
           </Link>
         </div>
+
+        {recent && (
+          <p
+            className="mb-5 inline-flex items-center gap-2 rounded-full border border-on-surface/10 bg-surface-container-low px-3.5 py-2 text-sm text-on-surface-variant"
+            aria-live="polite"
+          >
+            <span className="h-2 w-2 rounded-full bg-secondary animate-pulse" aria-hidden />
+            <span>
+              <strong className="text-on-surface">{recent.name}</strong> booked{' '}
+              <strong className="text-on-surface">{recent.car}</strong> · {recent.minutesAgo} min ago
+            </span>
+          </p>
+        )}
 
         {error && <p className="mb-4 text-sm text-error">{error}</p>}
 
